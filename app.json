@@ -2,6 +2,7 @@
   "expo": {
     "name": "roolio",
     "slug": "roolio",
+    "scheme": "roolio",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -25,6 +26,10 @@
       "eas": {
         "projectId": "ccf8ca54-7c54-41d3-8128-0a149e866b1b"
       }
-    }
+    },
+    "plugins": [
+      "expo-router",
+      "expo-status-bar"
+    ]
   }
 }
