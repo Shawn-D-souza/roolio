@@ -1,12 +1,14 @@
 import { createContext, useContext, useState, ReactNode } from "react";
-import { useColorScheme } from "react-native";
+import { ColorSchemeName, useColorScheme } from "react-native";
+import { StatusBar } from "expo-status-bar";
 import { colors, space, radius, AppColors } from "./tokens";
 
-type ThemeMode = "light" | "dark" | "system";
+export type ThemeMode = "light" | "dark" | "system";
 
-interface ThemeContextType {
+export interface ThemeContextType {
   mode: ThemeMode;
   isDark: boolean;
+  systemColorScheme: ColorSchemeName;
   setMode: (mode: ThemeMode) => void;
   colors: AppColors;
   space: typeof space;
@@ -26,8 +28,17 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   return (
     <ThemeContext.Provider
-      value={{ mode, setMode, colors: activeColors, isDark, space, radius }}
+      value={{
+        mode,
+        isDark,
+        systemColorScheme,
+        setMode,
+        colors: activeColors,
+        space,
+        radius,
+      }}
     >
+      <StatusBar style={isDark ? "light" : "dark"} />
       {children}
     </ThemeContext.Provider>
   );
