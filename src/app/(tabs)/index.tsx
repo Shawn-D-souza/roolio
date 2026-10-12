@@ -1,5 +1,6 @@
 import { StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { router } from "expo-router";
 import { useAppTheme } from "../../theme/ThemeProvider";
 import { EmptyState } from "../../components/home/EmptyState";
 import { AddAppButton } from "../../components/home/AddAppButton";
@@ -8,7 +9,7 @@ export default function HomeScreen() {
   const { colors } = useAppTheme();
 
   const handleAddApp = () => {
-    console.log("Navigating to Add App...");
+    router.push("/add-app");
   };
 
   return (
