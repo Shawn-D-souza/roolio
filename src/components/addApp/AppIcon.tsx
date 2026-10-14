@@ -10,22 +10,30 @@ type AppIconProps = {
   packageName: string;
   appName: string;
   updatedAt: number;
+  size?: number;
 };
 
 export const AppIcon = memo(function AppIcon({
   packageName,
   appName,
   updatedAt,
+  size = APP_ICON_SIZE,
 }: AppIconProps) {
   const { colors } = useAppTheme();
   const uri = useAppIcon(packageName, updatedAt);
   const [failedUri, setFailedUri] = useState<string | null>(null);
+  // Keep the corner radius proportional at every size.
+  const sizeStyle = {
+    width: size,
+    height: size,
+    borderRadius: (radius.medium * size) / APP_ICON_SIZE,
+  };
 
   if (uri && uri !== failedUri) {
     return (
       <Image
         source={{ uri }}
-        style={styles.icon}
+        style={[styles.icon, sizeStyle]}
         fadeDuration={0}
         onError={() => {
           // The cached file is gone (e.g. cache cleared); refetch on next mount.
@@ -38,9 +46,18 @@ export const AppIcon = memo(function AppIcon({
 
   return (
     <View
-      style={[styles.icon, { backgroundColor: colors.surfaceContainerHigh }]}
+      style={[
+        styles.icon,
+        sizeStyle,
+        { backgroundColor: colors.surfaceContainerHigh },
+      ]}
     >
-      <Text style={[styles.initial, { color: colors.onSurfaceVariant }]}>
+      <Text
+        style={[
+          styles.initial,
+          { color: colors.onSurfaceVariant, fontSize: size * 0.45 },
+        ]}
+      >
         {appName.trim().charAt(0).toUpperCase()}
       </Text>
     </View>
@@ -49,14 +66,10 @@ export const AppIcon = memo(function AppIcon({
 
 const styles = StyleSheet.create({
   icon: {
-    width: APP_ICON_SIZE,
-    height: APP_ICON_SIZE,
-    borderRadius: radius.medium,
     alignItems: "center",
     justifyContent: "center",
   },
   initial: {
-    fontSize: 18,
     fontWeight: "600",
   },
 });

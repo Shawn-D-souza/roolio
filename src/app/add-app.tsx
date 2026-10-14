@@ -20,6 +20,7 @@ import { router } from "expo-router";
 import { useAppTheme } from "../theme/ThemeProvider";
 import { radius, space } from "../theme/tokens";
 import { useInstalledApps } from "../hooks/installedApps/useInstalledApps";
+import { useBudgets } from "../hooks/budgets/useBudgets";
 import { AppRow, APP_ROW_HEIGHT } from "../components/addApp/AppRow";
 import { InstalledApp } from "../../modules/installed-apps";
 
@@ -44,11 +45,27 @@ const getItemLayout = (_: unknown, index: number) => ({
 
 export default function AddAppScreen() {
   const { colors } = useAppTheme();
-  const { apps, status, reload } = useInstalledApps();
+  const {
+    apps: installedApps,
+    status: appsStatus,
+    reload,
+  } = useInstalledApps();
+  const { budgetedPackages, status: budgetsStatus } = useBudgets();
+  // Hold the list until budgets load, so budgeted apps never flash in.
+  const status =
+    appsStatus === "ready" && budgetsStatus === "loading"
+      ? "loading"
+      : appsStatus;
   const [query, setQuery] = useState("");
   // Filtering runs at low priority so typing never waits on the list.
   const deferredQuery = useDeferredValue(query);
   const hasSelected = useRef(false);
+
+  // Apps that already have a budget are edited from Home, not added again.
+  const apps = useMemo(
+    () => installedApps.filter((app) => !budgetedPackages.has(app.packageName)),
+    [installedApps, budgetedPackages],
+  );
 
   // Normalize once per app list, not on every keystroke.
   const searchIndex = useMemo(
@@ -69,11 +86,18 @@ export default function AddAppScreen() {
   }, [apps, searchIndex, deferredQuery]);
 
   const handleSelect = useCallback((app: InstalledApp) => {
-    // Guard against a double tap popping past Home.
+    // Guard against a double tap opening the editor twice.
     if (hasSelected.current) return;
     hasSelected.current = true;
-    console.log("Selected app:", app.packageName);
-    router.back();
+    // Replace the picker so going back from the editor returns to Home.
+    router.replace({
+      pathname: "/budget/[packageName]",
+      params: {
+        packageName: app.packageName,
+        appName: app.appName,
+        iconVersion: String(app.updatedAt),
+      },
+    });
   }, []);
 
   const renderItem = useCallback(

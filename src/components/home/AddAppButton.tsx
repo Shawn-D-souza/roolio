@@ -19,6 +19,8 @@ export function AddAppButton({ onPress }: AddAppButtonProps) {
         { backgroundColor: colors.primary, borderRadius: radius.full },
       ]}
       onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel="Add app"
     >
       <MaterialIcons name="add" size={28} color={colors.onPrimary} />
     </Pressable>

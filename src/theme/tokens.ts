@@ -101,7 +101,9 @@ export const colors: Record<ColorScheme, AppColors> = {
     onError: "#FFFFFF",
     errorContainer: "#FFDAD6",
     onErrorContainer: "#410002",
-    scrim: "rgba(0, 0, 0, 0.32)",
+    // Overlay behind dialogs and sheets. Dark mode needs a stronger value,
+    // since dimming an already-dark page barely shows.
+    scrim: "rgba(0, 0, 0, 0.4)",
   },
   dark: {
     background: "#121218",
@@ -127,7 +129,7 @@ export const colors: Record<ColorScheme, AppColors> = {
     onError: "#690005",
     errorContainer: "#93000A",
     onErrorContainer: "#FFDAD6",
-    scrim: "rgba(0, 0, 0, 0.32)",
+    scrim: "rgba(0, 0, 0, 0.6)",
   },
 };
 
