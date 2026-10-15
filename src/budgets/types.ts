@@ -24,3 +24,9 @@ export type AppBudget = BudgetedApp &
     createdAt: number;
     updatedAt: number;
   };
+
+// A budget with its usage in the current period.
+export type BudgetWithUsage = AppBudget & {
+  usedMinutes: number;
+  availableMinutes: number;
+};

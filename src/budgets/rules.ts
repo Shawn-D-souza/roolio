@@ -3,6 +3,8 @@ import type { BudgetPeriod, BudgetSettings } from "./types";
 
 export const MIN_BUDGET_MINUTES = 1;
 export const MAX_PERIOD_COUNT = 7;
+// At or below this many minutes left, a budget reads as running low (PRD §8.5).
+export const LOW_TIME_MINUTES = 5;
 
 const HOUR = 60;
 const DAY = 24 * HOUR;
@@ -98,6 +100,25 @@ export function convertBudget(
   const converted = (minutes / PERIOD_DAYS[from]) * PERIOD_DAYS[to];
   const step = budgetStep(to);
   return clampBudget(Math.round(converted / step) * step, to);
+}
+
+// Whole minutes used, rounded down so a budget never reads as used up early.
+export function usedMinutesFromMs(ms: number) {
+  return Math.max(0, Math.floor(ms / 60_000));
+}
+
+/* Minutes still available this period (PRD §6.2). Never below 0.
+ * TODO(ledger): add banked time and minutes gained by borrowing, and use 0 as
+ * the budget in a borrowed period, once banking and borrowing are built. */
+export function availableMinutes(budgetMinutes: number, usedMinutes: number) {
+  return Math.max(0, budgetMinutes - usedMinutes);
+}
+
+export type TimeLeftState = "ok" | "low" | "out";
+
+export function timeLeftState(available: number): TimeLeftState {
+  if (available <= 0) return "out";
+  return available <= LOW_TIME_MINUTES ? "low" : "ok";
 }
 
 export function clampPeriodCount(count: number) {

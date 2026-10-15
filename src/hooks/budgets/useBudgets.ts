@@ -1,22 +1,51 @@
 import { useMemo } from "react";
 import type { SQLiteDatabase } from "expo-sqlite";
-import { listBudgets } from "../../budgets/repository";
-import type { AppBudget } from "../../budgets/types";
+import { getUninstalledAsync } from "../../../modules/installed-apps";
+import { deleteBudgets, listBudgets } from "../../budgets/repository";
+import type { AppBudget, BudgetWithUsage } from "../../budgets/types";
+import { readUsage, syncTracking, withUsage } from "../../usage/tracking";
 import { useBudgetQuery } from "./useBudgetQuery";
 
-const EMPTY: AppBudget[] = [];
+const EMPTY: BudgetWithUsage[] = [];
 
-// Least time first until usage is tracked, available time is the budget itself.
-function byAvailableTime(a: AppBudget, b: AppBudget) {
+// Least available time first.
+function byAvailableTime(a: BudgetWithUsage, b: BudgetWithUsage) {
   return (
-    a.budgetMinutes - b.budgetMinutes ||
+    a.availableMinutes - b.availableMinutes ||
     a.appName.localeCompare(b.appName, undefined, { sensitivity: "base" })
   );
 }
 
+// An uninstalled app's budget is removed. Deleting it re-syncs the
+// tracker, which drops the app's usage history too.
+async function removeUninstalled(db: SQLiteDatabase, budgets: AppBudget[]) {
+  let uninstalled: string[];
+  try {
+    uninstalled = await getUninstalledAsync(
+      budgets.map((budget) => budget.packageName),
+    );
+  } catch {
+    // Only remove what was confirmed missing; try again on the next load.
+    return budgets;
+  }
+  if (uninstalled.length === 0) return budgets;
+  try {
+    await deleteBudgets(db, uninstalled);
+  } catch {
+    return budgets;
+  }
+  const removed = new Set(uninstalled);
+  return budgets.filter((budget) => !removed.has(budget.packageName));
+}
+
 async function loadBudgets(db: SQLiteDatabase) {
-  const budgets = await listBudgets(db);
-  return budgets.sort(byAvailableTime);
+  const budgets = await removeUninstalled(db, await listBudgets(db));
+  // Sync first so a just-added app is tracked, with its usage so far, before the read.
+  await syncTracking(budgets).catch(() => undefined);
+  const usage = await readUsage();
+  return budgets
+    .map((budget) => withUsage(budget, usage))
+    .sort(byAvailableTime);
 }
 
 export function useBudgets() {

@@ -49,6 +49,19 @@ class InstalledAppsModule : Module() {
     AsyncFunction("getAppIconAsync") { packageName: String ->
       return@AsyncFunction loadIconFileUri(packageName)
     }
+
+    // The packages in `packageNames` that are no longer installed.
+    AsyncFunction("getUninstalledAsync") { packageNames: List<String> ->
+      val packageManager = context.packageManager
+      return@AsyncFunction packageNames.filter { packageName ->
+        try {
+          getPackageInfo(packageManager, packageName)
+          false
+        } catch (ignored: PackageManager.NameNotFoundException) {
+          true
+        }
+      }
+    }
   }
 
   private fun listLaunchableApps(): List<Map<String, Any>> {

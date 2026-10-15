@@ -13,7 +13,7 @@ import { router } from "expo-router";
 import { useAppTheme } from "../../theme/ThemeProvider";
 import { radius, space } from "../../theme/tokens";
 import { useBudgets } from "../../hooks/budgets/useBudgets";
-import type { AppBudget } from "../../budgets/types";
+import type { BudgetWithUsage } from "../../budgets/types";
 import { EmptyState } from "../../components/home/EmptyState";
 import {
   AddAppButton,
@@ -21,7 +21,7 @@ import {
 } from "../../components/home/AddAppButton";
 import { BudgetCard } from "../../components/home/BudgetCard";
 
-const keyExtractor = (budget: AppBudget) => budget.packageName;
+const keyExtractor = (budget: BudgetWithUsage) => budget.packageName;
 
 export default function HomeScreen() {
   const { colors } = useAppTheme();
@@ -31,7 +31,7 @@ export default function HomeScreen() {
     router.push("/add-app");
   };
 
-  const handleOpenBudget = useCallback((budget: AppBudget) => {
+  const handleOpenBudget = useCallback((budget: BudgetWithUsage) => {
     router.push({
       pathname: "/budget/[packageName]",
       params: { packageName: budget.packageName },
@@ -39,7 +39,7 @@ export default function HomeScreen() {
   }, []);
 
   const renderItem = useCallback(
-    ({ item }: { item: AppBudget }) => (
+    ({ item }: { item: BudgetWithUsage }) => (
       <BudgetCard budget={item} onPress={handleOpenBudget} />
     ),
     [handleOpenBudget],

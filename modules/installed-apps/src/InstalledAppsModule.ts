@@ -1,9 +1,10 @@
-import { NativeModule, requireNativeModule } from 'expo';
-import { InstalledApp } from './InstalledApps.types'
+import { NativeModule, requireNativeModule } from "expo";
+import { InstalledApp } from "./InstalledApps.types";
 
 declare class InstalledAppsModule extends NativeModule<{}> {
   getInstalledAppsAsync(): Promise<InstalledApp[]>;
   getAppIconAsync(packageName: string): Promise<string>;
+  getUninstalledAsync(packageNames: string[]): Promise<string[]>;
 }
 
-export default requireNativeModule<InstalledAppsModule>('InstalledApps');
+export default requireNativeModule<InstalledAppsModule>("InstalledApps");

@@ -3,18 +3,21 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useAppTheme } from "../../theme/ThemeProvider";
 import { radius, space } from "../../theme/tokens";
-import type { AppBudget } from "../../budgets/types";
+import type { BudgetWithUsage } from "../../budgets/types";
 import {
+  currentPeriodLabel,
   formatDuration,
   formatPeriodCount,
-  perPeriodLabel,
+  formatUsage,
   periodLabel,
 } from "../../budgets/format";
+import { timeLeftState } from "../../budgets/rules";
 import { AppIcon } from "../addApp/AppIcon";
+import { UsageBar } from "../budget/UsageBar";
 
 type BudgetCardProps = {
-  budget: AppBudget;
-  onPress: (budget: AppBudget) => void;
+  budget: BudgetWithUsage;
+  onPress: (budget: BudgetWithUsage) => void;
 };
 
 export const BudgetCard = memo(function BudgetCard({
@@ -24,6 +27,20 @@ export const BudgetCard = memo(function BudgetCard({
   const { colors } = useAppTheme();
   const rollover = formatPeriodCount(budget.rolloverCeiling, budget.period);
   const borrow = formatPeriodCount(budget.borrowCap, budget.period);
+  const state = timeLeftState(budget.availableMinutes);
+  const when = currentPeriodLabel(budget.period);
+  const usage = `${formatUsage(budget.usedMinutes, budget.budgetMinutes)} ${when}`;
+
+  // Low and out of time are told by an icon and words too, never by color alone.
+  const amountColor =
+    state === "out"
+      ? colors.borrowed
+      : state === "low"
+        ? colors.low
+        : colors.primary;
+  const amount =
+    state === "out" ? "Time's up" : formatDuration(budget.availableMinutes);
+  const amountCaption = state === "out" ? `for ${when}` : `left ${when}`;
 
   return (
     <View
@@ -39,7 +56,7 @@ export const BudgetCard = memo(function BudgetCard({
         onPress={() => onPress(budget)}
         android_ripple={{ color: colors.surfaceContainerHighest }}
         accessibilityRole="button"
-        accessibilityLabel={`${budget.appName}, ${formatDuration(budget.budgetMinutes)} ${perPeriodLabel(budget.period)}`}
+        accessibilityLabel={`${budget.appName}, ${amount} ${amountCaption}. ${usage}`}
         accessibilityHint="Opens budget settings"
         style={styles.pressable}
       >
@@ -62,15 +79,41 @@ export const BudgetCard = memo(function BudgetCard({
             </Text>
           </View>
           <View style={styles.amount}>
-            <Text style={[styles.amountValue, { color: colors.primary }]}>
-              {formatDuration(budget.budgetMinutes)}
-            </Text>
+            <View style={styles.amountRow}>
+              {state !== "ok" && (
+                <MaterialIcons
+                  name={state === "out" ? "block" : "hourglass-bottom"}
+                  size={18}
+                  color={amountColor}
+                />
+              )}
+              <Text
+                style={[
+                  styles.amountValue,
+                  state === "out" && styles.amountValueOut,
+                  { color: amountColor },
+                ]}
+              >
+                {amount}
+              </Text>
+            </View>
             <Text
               style={[styles.amountCaption, { color: colors.onSurfaceVariant }]}
             >
-              {perPeriodLabel(budget.period)}
+              {amountCaption}
             </Text>
           </View>
+        </View>
+
+        <View style={styles.usage}>
+          <UsageBar
+            usedMinutes={budget.usedMinutes}
+            budgetMinutes={budget.budgetMinutes}
+            state={state}
+          />
+          <Text style={[styles.usageText, { color: colors.onSurfaceVariant }]}>
+            {usage}
+          </Text>
         </View>
 
         <View style={styles.settings}>
@@ -132,13 +175,28 @@ const styles = StyleSheet.create({
   amount: {
     alignItems: "flex-end",
   },
+  amountRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: space.xs,
+  },
   amountValue: {
     fontSize: 24,
     fontWeight: "700",
     fontVariant: ["tabular-nums"],
   },
+  amountValueOut: {
+    fontSize: 18,
+  },
   amountCaption: {
     fontSize: 12,
+  },
+  usage: {
+    gap: space.sm,
+  },
+  usageText: {
+    fontSize: 13,
+    fontVariant: ["tabular-nums"],
   },
   settings: {
     flexDirection: "row",

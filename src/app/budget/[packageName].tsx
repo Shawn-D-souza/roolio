@@ -23,12 +23,13 @@ import {
 } from "../../budgets/rules";
 import { formatPeriods, periodLabel, periodNoun } from "../../budgets/format";
 import type {
-  AppBudget,
   BudgetPeriod,
   BudgetSettings,
+  BudgetWithUsage,
   BudgetedApp,
 } from "../../budgets/types";
 import { AppIcon } from "../../components/addApp/AppIcon";
+import { UsageSummary } from "../../components/budget/UsageSummary";
 import { PeriodSelector } from "../../components/budget/PeriodSelector";
 import { DurationStepper } from "../../components/budget/DurationStepper";
 import { CountStepper } from "../../components/budget/CountStepper";
@@ -129,7 +130,7 @@ export default function BudgetScreen() {
 type BudgetFormProps = {
   app: BudgetedApp;
   // The stored budget when editing, or null when adding a new one.
-  budget: AppBudget | null;
+  budget: BudgetWithUsage | null;
 };
 
 function BudgetForm({ app, budget }: BudgetFormProps) {
@@ -198,7 +199,7 @@ function BudgetForm({ app, budget }: BudgetFormProps) {
 
   const handleSave = () => {
     if (!canSave) return;
-    // Switching periods restarts how time is counted, so confirm first (PRD §7).
+    // Switching periods restarts how time is counted, so confirm first.
     if (periodChanged) {
       openDialog("switch-period");
       return;
@@ -248,6 +249,8 @@ function BudgetForm({ app, budget }: BudgetFormProps) {
             {app.appName}
           </Text>
         </View>
+
+        {budget && <UsageSummary budget={budget} />}
 
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.onSurface }]}>

@@ -36,6 +36,22 @@ export function periodNoun(period: BudgetPeriod, count = 1) {
   return count === 1 ? singular : plural;
 }
 
+const CURRENT_PERIOD: Record<BudgetPeriod, string> = {
+  day: "today",
+  week: "this week",
+  month: "this month",
+};
+
+// "today", "this week", "this month".
+export function currentPeriodLabel(period: BudgetPeriod) {
+  return CURRENT_PERIOD[period];
+}
+
+// "Used 18 min of 1h".
+export function formatUsage(usedMinutes: number, budgetMinutes: number) {
+  return `Used ${formatDuration(usedMinutes)} of ${formatDuration(budgetMinutes)}`;
+}
+
 // "1 day", "3 weeks".
 export function formatPeriods(count: number, period: BudgetPeriod) {
   return `${count} ${periodNoun(period, count)}`;

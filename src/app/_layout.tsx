@@ -6,6 +6,7 @@ import {
   PermissionsProvider,
   usePermissions,
 } from "../permissions/PermissionsProvider";
+import { useUsageSync } from "../usage/useUsageSync";
 
 export default function RootLayout() {
   return (
@@ -21,6 +22,7 @@ export default function RootLayout() {
 
 function RootStack() {
   const { needsSetup } = usePermissions();
+  useUsageSync();
 
   return (
     <Stack screenOptions={{ headerShown: false }}>

@@ -80,6 +80,20 @@ export async function createBudget(
   notifyBudgetsChanged();
 }
 
+// Removes budgets. It applies immediately.
+export async function deleteBudgets(
+  db: SQLiteDatabase,
+  packageNames: readonly string[],
+) {
+  if (packageNames.length === 0) return;
+  const placeholders = packageNames.map(() => "?").join(", ");
+  await db.runAsync(
+    `DELETE FROM ${BUDGETS_TABLE} WHERE package_name IN (${placeholders})`,
+    ...packageNames,
+  );
+  notifyBudgetsChanged();
+}
+
 // Saves edits to a budget. Edits apply immediately
 export async function updateBudget(
   db: SQLiteDatabase,

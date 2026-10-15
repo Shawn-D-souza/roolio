@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="roolio_tracking_channel_name">Budget tracking</string>
+    <string name="roolio_tracking_channel_description">A silent notification that shows while Roolio measures time in apps with a budget.</string>
+    <string name="roolio_tracking_title">Roolio is active</string>
+    <string name="roolio_tracking_text">Keeping your app budgets up to date</string>
+
+    <string name="roolio_alerts_channel_name">Permission alerts</string>
+    <string name="roolio_alerts_channel_description">Tells you when a permission Roolio needs is turned off.</string>
+    <string name="roolio_access_lost_title">Usage access is off</string>
+    <string name="roolio_access_lost_text">Roolio can\'t track your budgets right now. Your budgets are kept. Tap to turn it back on.</string>
+</resources>
