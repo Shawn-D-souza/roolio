@@ -32,6 +32,7 @@ import { AppIcon } from "../../components/addApp/AppIcon";
 import { PeriodSelector } from "../../components/budget/PeriodSelector";
 import { DurationStepper } from "../../components/budget/DurationStepper";
 import { CountStepper } from "../../components/budget/CountStepper";
+import { PrimaryButton } from "../../components/ui/PrimaryButton";
 import { ConfirmDialog } from "../../components/ui/ConfirmDialog";
 
 type Params = {
@@ -50,10 +51,10 @@ export default function BudgetScreen() {
   const newApp: BudgetedApp | null =
     params.appName && Number.isFinite(iconVersion)
       ? {
-        packageName: params.packageName,
-        appName: params.appName,
-        iconVersion,
-      }
+          packageName: params.packageName,
+          appName: params.appName,
+          iconVersion,
+        }
       : null;
 
   // Fix the mode on first load so saving a new budget (which makes `budget`
@@ -209,23 +210,23 @@ function BudgetForm({ app, budget }: BudgetFormProps) {
   const dialogContent =
     dialog === "switch-period"
       ? {
-        /* TODO(borrowing): When the app has borrowed periods, PRD §7 requires
-        * this dialog to offer "Clear the borrowed" (future periods return to
-        * full budget) and "Keep the borrowed" (owed minutes are deducted
-        * from the new period's budgets). Add both actions once borrowing
-        * is built. */
-        title: `Switch to ${newPeriod}?`,
-        message: `Your budget will reset ${newPeriod} from now on. Time you've already used counts toward the new ${periodNoun(form.period)}.`,
-        actions: [
-          { label: "Cancel" },
-          { label: "Switch now", onPress: () => void persist() },
-        ],
-      }
+          /* TODO(borrowing): When the app has borrowed periods, PRD §7 requires
+           * this dialog to offer "Clear the borrowed" (future periods return to
+           * full budget) and "Keep the borrowed" (owed minutes are deducted
+           * from the new period's budgets). Add both actions once borrowing
+           * is built. */
+          title: `Switch to ${newPeriod}?`,
+          message: `Your budget will reset ${newPeriod} from now on. Time you've already used counts toward the new ${periodNoun(form.period)}.`,
+          actions: [
+            { label: "Cancel" },
+            { label: "Switch now", onPress: () => void persist() },
+          ],
+        }
       : {
-        title: "Couldn't save budget",
-        message: "Your changes weren't saved. Please try again.",
-        actions: [{ label: "OK" }],
-      };
+          title: "Couldn't save budget",
+          message: "Your changes weren't saved. Please try again.",
+          actions: [{ label: "OK" }],
+        };
 
   return (
     <>
@@ -306,40 +307,15 @@ function BudgetForm({ app, budget }: BudgetFormProps) {
       <View
         style={[styles.bottomBar, { borderTopColor: colors.outlineVariant }]}
       >
-        <Pressable
+        <PrimaryButton
           // Dismissing the keyboard commits the typed time.
           onPress={typingTime ? Keyboard.dismiss : handleSave}
           disabled={!buttonEnabled}
-          accessibilityRole="button"
-          accessibilityState={{ disabled: !buttonEnabled, busy: saving }}
-          android_ripple={{ color: colors.primaryContainer }}
-          style={[
-            styles.primaryButton,
-            {
-              backgroundColor:
-                buttonEnabled || saving
-                  ? colors.primary
-                  : colors.surfaceContainerHighest,
-            },
-          ]}
-        >
-          {saving ? (
-            <ActivityIndicator color={colors.onPrimary} />
-          ) : (
-            <Text
-              style={[
-                styles.primaryButtonLabel,
-                {
-                  color: buttonEnabled
-                    ? colors.onPrimary
-                    : colors.onSurfaceVariant,
-                },
-              ]}
-            >
-              {typingTime ? "Done" : isEditing ? "Save changes" : "Add budget"}
-            </Text>
-          )}
-        </Pressable>
+          busy={saving}
+          label={
+            typingTime ? "Done" : isEditing ? "Save changes" : "Add budget"
+          }
+        />
       </View>
 
       <ConfirmDialog
@@ -421,17 +397,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: space.lg,
     paddingVertical: space.md,
     borderTopWidth: StyleSheet.hairlineWidth,
-  },
-  primaryButton: {
-    height: 56,
-    borderRadius: radius.full,
-    alignItems: "center",
-    justifyContent: "center",
-    overflow: "hidden",
-  },
-  primaryButtonLabel: {
-    fontSize: 16,
-    fontWeight: "600",
   },
   centered: {
     flex: 1,

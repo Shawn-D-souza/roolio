@@ -1,0 +1,11 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <!-- Measures foreground time per app. Granted by the user in Settings > Usage access. -->
+    <uses-permission
+        android:name="android.permission.PACKAGE_USAGE_STATS"
+        tools:ignore="ProtectedPermissions" />
+    <!-- Shows the pause screen over a limited app. -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <!-- Runtime permission on Android 13+; earlier versions ignore it. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+</manifest>

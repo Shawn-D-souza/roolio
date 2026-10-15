@@ -43,6 +43,7 @@ Roolio v1 does **not** include:
 - Social features, sharing, or leaderboards
 - Ads
 - Home screen widgets
+- The Accessibility service (see section 10.1 for when it may be added)
 
 ## 4. Budget periods
 
@@ -167,6 +168,10 @@ Details:
 
 1. Three short screens explaining budget, bank, and borrow, with one visual example.
 2. Permission requests (see section 10), each with a plain-language explanation of why it is needed. Roolio cannot work without Usage Access and Display over other apps.
+   - Permissions granted in system Settings (Usage Access, Display over other apps) use two screens: first **why** (what it is for, plus a few words the user can take in at a glance, such as "Your data always stays: Private, Offline, On this phone"; a "Learn more" sheet answers the full questions, such as what Roolio sees, what it can't see, and where the data goes), then **how** (numbered steps with sketches of the Settings screens the user will see), then Settings opens.
+   - Sketches of system screens use neutral Android styling, not Roolio's theme, so they match what the user will actually see.
+   - Roolio returns to the front by itself once the permission is granted, where Android allows it. Otherwise the user comes back with Back, and Roolio says if the permission is still off.
+   - The same screens appear whenever Roolio is opened with a required permission missing. If the permission was granted before and later turned off, the wording says so and reassures the user that their budgets are kept.
 3. Choose apps: a searchable list of installed apps (exempt apps are not shown). Free users can select up to 3.
 4. For each selected app, on its selection screen: set the budget and the period (daily; weekly and monthly are shown with a premium lock for free users), then rollover ceiling and borrow cap. Both default to 1.
 5. Finish on the Home screen. Budgets are active immediately.
@@ -247,6 +252,20 @@ Premium unlocks:
 3. **Notifications:** for the alerts in section 8.5.
 
 Roolio does not ask for Accessibility, location, contacts, storage, camera, or microphone.
+
+### 10.1 Future: Accessibility service (not in v1)
+
+v1 detects app use with Usage Access only. This keeps the permission list minimal, matches the privacy promise above, and avoids the extra Google Play review that the Accessibility API requires for apps that are not accessibility tools.
+
+Known trade-offs of Usage Access alone:
+
+- The pause screen can appear up to about a second after an app opens, because Roolio checks the foreground app on a short interval instead of being told instantly.
+- On phones that aggressively stop background apps (for example Xiaomi, Oppo/Realme, Vivo, Huawei), Roolio's background service may be stopped unless the user exempts it from battery restrictions.
+
+Revisit after launch, based on user feedback and reliability data (reviews, uninstall reasons, reports that the pause screen was late or did not appear). If Accessibility is added:
+
+- It is offered during onboarding as the **recommended** option, with Usage Access as the fallback for users who decline it. A user who declines must still get a working app.
+- It needs Google Play's Accessibility declaration, a prominent in-app disclosure, and an update to section 10 and goal 4.
 
 **Privacy principles:**
 

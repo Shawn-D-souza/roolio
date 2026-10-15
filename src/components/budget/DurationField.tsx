@@ -148,51 +148,55 @@ export function DurationField({
 
   const formatted = formatDuration(minutes);
 
+  // Android ripples ignore borderRadius on the Pressable itself, so a rounded
+  // wrapper clips the ripple to the field's shape.
   return (
-    <Pressable
-      onPress={startEditing}
-      android_ripple={{ color: colors.surfaceContainerHighest }}
-      style={[styles.container, styles.tappable]}
-      accessibilityRole="adjustable"
-      accessibilityLabel="Budget"
-      accessibilityValue={{ text: `${formatted} ${perPeriodLabel(period)}` }}
-      accessibilityHint="Double tap to type an exact time"
-      accessibilityActions={[
-        { name: "activate" },
-        { name: "increment" },
-        { name: "decrement" },
-      ]}
-      onAccessibilityAction={(event) => {
-        switch (event.nativeEvent.actionName) {
-          case "activate":
-            startEditing();
-            break;
-          case "increment":
-            onChange(incrementBudget(minutes, period));
-            break;
-          case "decrement":
-            onChange(decrementBudget(minutes, period));
-            break;
-        }
-      }}
-    >
-      <Text
-        style={[styles.value, { color: colors.primary }]}
-        numberOfLines={1}
-        adjustsFontSizeToFit
-      >
-        {formatted}
-      </Text>
-      <Text
-        style={[
-          styles.caption,
-          styles.viewCaption,
-          { color: colors.onSurfaceVariant },
+    <View style={styles.tappableClip}>
+      <Pressable
+        onPress={startEditing}
+        android_ripple={{ color: colors.surfaceContainerHighest }}
+        style={styles.tappable}
+        accessibilityRole="adjustable"
+        accessibilityLabel="Budget"
+        accessibilityValue={{ text: `${formatted} ${perPeriodLabel(period)}` }}
+        accessibilityHint="Double tap to type an exact time"
+        accessibilityActions={[
+          { name: "activate" },
+          { name: "increment" },
+          { name: "decrement" },
         ]}
+        onAccessibilityAction={(event) => {
+          switch (event.nativeEvent.actionName) {
+            case "activate":
+              startEditing();
+              break;
+            case "increment":
+              onChange(incrementBudget(minutes, period));
+              break;
+            case "decrement":
+              onChange(decrementBudget(minutes, period));
+              break;
+          }
+        }}
       >
-        {perPeriodLabel(period)}
-      </Text>
-    </Pressable>
+        <Text
+          style={[styles.value, { color: colors.primary }]}
+          numberOfLines={1}
+          adjustsFontSizeToFit
+        >
+          {formatted}
+        </Text>
+        <Text
+          style={[
+            styles.caption,
+            styles.viewCaption,
+            { color: colors.onSurfaceVariant },
+          ]}
+        >
+          {perPeriodLabel(period)}
+        </Text>
+      </Pressable>
+    </View>
   );
 }
 
@@ -227,9 +231,13 @@ const styles = StyleSheet.create({
     marginRight: space.xs,
   },
   // Rounded and clipped so the tap ripple stays inside a soft shape.
-  tappable: {
+  tappableClip: {
+    flex: 1,
     borderRadius: radius.medium,
     overflow: "hidden",
+  },
+  tappable: {
+    alignItems: "center",
     paddingVertical: space.xs,
   },
   viewCaption: {

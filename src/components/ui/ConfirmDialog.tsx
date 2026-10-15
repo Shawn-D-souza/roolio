@@ -80,9 +80,7 @@ export function ConfirmDialog({
       onRequestClose={onDismiss}
     >
       {/* Ignore touches while closing so an action can't fire twice. */}
-      <View
-        style={[styles.root, { pointerEvents: visible ? "auto" : "none" }]}
-      >
+      <View style={[styles.root, { pointerEvents: visible ? "auto" : "none" }]}>
         <Animated.View
           style={[
             StyleSheet.absoluteFill,
@@ -118,30 +116,33 @@ export function ConfirmDialog({
           </Text>
           <View style={styles.actions}>
             {actions.map((action) => (
-              <Pressable
-                key={action.label}
-                onPress={() => {
-                  onDismiss();
-                  action.onPress?.();
-                }}
-                android_ripple={{ color: colors.surfaceContainerHighest }}
-                accessibilityRole="button"
-                style={styles.action}
-              >
-                <Text
-                  style={[
-                    styles.actionLabel,
-                    {
-                      color:
-                        action.tone === "destructive"
-                          ? colors.error
-                          : colors.primary,
-                    },
-                  ]}
+              // Android ripples ignore borderRadius on the Pressable itself,
+              // so a rounded wrapper clips the ripple to the pill shape.
+              <View key={action.label} style={styles.actionClip}>
+                <Pressable
+                  onPress={() => {
+                    onDismiss();
+                    action.onPress?.();
+                  }}
+                  android_ripple={{ color: colors.surfaceContainerHighest }}
+                  accessibilityRole="button"
+                  style={styles.action}
                 >
-                  {action.label}
-                </Text>
-              </Pressable>
+                  <Text
+                    style={[
+                      styles.actionLabel,
+                      {
+                        color:
+                          action.tone === "destructive"
+                            ? colors.error
+                            : colors.primary,
+                      },
+                    ]}
+                  >
+                    {action.label}
+                  </Text>
+                </Pressable>
+              </View>
             ))}
           </View>
         </Animated.View>
@@ -181,11 +182,13 @@ const styles = StyleSheet.create({
     gap: space.sm,
     marginTop: space.xl,
   },
+  actionClip: {
+    borderRadius: radius.full,
+    overflow: "hidden",
+  },
   action: {
     minHeight: 40,
     paddingHorizontal: space.md,
-    borderRadius: radius.full,
-    overflow: "hidden",
     alignItems: "center",
     justifyContent: "center",
   },
