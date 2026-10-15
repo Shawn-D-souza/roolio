@@ -1,32 +1,35 @@
-export type BudgetPeriod = "day" | "week" | "month";
+import type {
+  BorrowOffer,
+  BudgetApp,
+  BudgetPeriod,
+  BudgetSettings,
+} from "../../modules/roolio-core";
+
+export type {
+  BorrowedChoice,
+  BorrowOffer,
+  BudgetPeriod,
+  BudgetSettings,
+} from "../../modules/roolio-core";
 
 export const BUDGET_PERIODS: readonly BudgetPeriod[] = ["day", "week", "month"];
 
-// The user-editable values of a budget.
-export type BudgetSettings = {
-  period: BudgetPeriod;
-  budgetMinutes: number;
-  // Maximum banked time, in periods of this budget (0 = no rollover).
-  rolloverCeiling: number;
-  // Maximum future periods borrowed at once (0 = no borrowing).
-  borrowCap: number;
-};
+export type BudgetedApp = BudgetApp;
 
-export type BudgetedApp = {
-  packageName: string;
-  appName: string;
-  // The app's last update time, used to key its cached icon.
-  iconVersion: number;
-};
-
-export type AppBudget = BudgetedApp &
+// One app's budget with its current period, in whole minutes.
+export type BudgetWithUsage = BudgetedApp &
   BudgetSettings & {
+    id: number;
     createdAt: number;
     updatedAt: number;
+    usedMinutes: number;
+    availableMinutes: number;
+    // Banked time not spent yet, e.g. "Banked: 40 min".
+    bankedMinutes: number;
+    // Upcoming periods already borrowed, e.g. "Borrowed: 2 days ahead".
+    borrowedPeriods: number;
+    // Minutes still owed after a period change.
+    owedMinutes: number;
+    // Null when the borrow cap is reached or borrowing is off.
+    nextBorrow: BorrowOffer | null;
   };
-
-// A budget with its usage in the current period.
-export type BudgetWithUsage = AppBudget & {
-  usedMinutes: number;
-  availableMinutes: number;
-};

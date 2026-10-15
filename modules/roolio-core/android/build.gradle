@@ -3,11 +3,11 @@ plugins {
   id 'expo-module-gradle-plugin'
 }
 
-group = 'expo.modules.roolio.usage'
+group = 'expo.modules.roolio.core'
 version = '0.1.0'
 
 android {
-  namespace "expo.modules.roolio.usage"
+  namespace "expo.modules.roolio.core"
   defaultConfig {
     versionCode 1
     versionName "0.1.0"

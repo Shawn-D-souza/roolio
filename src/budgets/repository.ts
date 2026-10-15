@@ -1,121 +1,77 @@
-import type { SQLiteDatabase } from "expo-sqlite";
+import * as native from "../../modules/roolio-core";
+import type { BudgetRecord } from "../../modules/roolio-core";
 import { notifyBudgetsChanged } from "./events";
 import { normalizeSettings } from "./rules";
 import type {
-  AppBudget,
-  BudgetPeriod,
+  BorrowedChoice,
   BudgetSettings,
+  BudgetWithUsage,
   BudgetedApp,
 } from "./types";
 
-export const BUDGETS_TABLE = "app_budgets";
+const MINUTE_MS = 60_000;
 
-type BudgetRow = {
-  package_name: string;
-  app_name: string;
-  icon_version: number;
-  period: BudgetPeriod;
-  budget_minutes: number;
-  rollover_ceiling: number;
-  borrow_cap: number;
-  created_at: number;
-  updated_at: number;
-};
-
-function toAppBudget(row: BudgetRow): AppBudget {
+// Used time rounds down and available time up, so a budget never reads as
+// used up while time is left.
+function toBudgetWithUsage(record: BudgetRecord): BudgetWithUsage | null {
+  const app = record.apps[0];
+  if (record.kind !== "app" || !app) return null;
+  const { current } = record;
   return {
-    packageName: row.package_name,
-    appName: row.app_name,
-    iconVersion: row.icon_version,
-    period: row.period,
-    budgetMinutes: row.budget_minutes,
-    rolloverCeiling: row.rollover_ceiling,
-    borrowCap: row.borrow_cap,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
+    ...app,
+    id: record.id,
+    period: record.period,
+    budgetMinutes: record.budgetMinutes,
+    rolloverCeiling: record.rolloverCeiling,
+    borrowCap: record.borrowCap,
+    createdAt: record.createdAt,
+    updatedAt: record.updatedAt,
+    usedMinutes: Math.floor(current.usedMs / MINUTE_MS),
+    availableMinutes: Math.ceil(current.availableMs / MINUTE_MS),
+    bankedMinutes: Math.floor(current.bankedMs / MINUTE_MS),
+    borrowedPeriods: current.borrowedPeriods,
+    owedMinutes: Math.ceil(current.owedMs / MINUTE_MS),
+    nextBorrow: current.nextBorrow,
   };
 }
 
-export async function listBudgets(db: SQLiteDatabase): Promise<AppBudget[]> {
-  const rows = await db.getAllAsync<BudgetRow>(
-    `SELECT * FROM ${BUDGETS_TABLE}`,
-  );
-  return rows.map(toAppBudget);
+/** Every app budget with its current period. */
+export async function listBudgets(): Promise<BudgetWithUsage[]> {
+  const records = await native.getBudgets();
+  return records.flatMap((record) => toBudgetWithUsage(record) ?? []);
 }
 
+/** The budget of one app, or null if it has none. */
 export async function getBudget(
-  db: SQLiteDatabase,
   packageName: string,
-): Promise<AppBudget | null> {
-  const row = await db.getFirstAsync<BudgetRow>(
-    `SELECT * FROM ${BUDGETS_TABLE} WHERE package_name = ?`,
-    packageName,
-  );
-  return row ? toAppBudget(row) : null;
+): Promise<BudgetWithUsage | null> {
+  const record = await native.getAppBudget(packageName);
+  return record && toBudgetWithUsage(record);
 }
 
 // Adds a budget. It applies immediately.
-export async function createBudget(
-  db: SQLiteDatabase,
-  app: BudgetedApp,
-  settings: BudgetSettings,
-  now: number = Date.now(),
-) {
-  const values = normalizeSettings(settings);
-  await db.runAsync(
-    `INSERT INTO ${BUDGETS_TABLE} (
-       package_name, app_name, icon_version, period, budget_minutes,
-       rollover_ceiling, borrow_cap, created_at, updated_at
-     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    app.packageName,
-    app.appName,
-    app.iconVersion,
-    values.period,
-    values.budgetMinutes,
-    values.rolloverCeiling,
-    values.borrowCap,
-    now,
-    now,
-  );
+export async function createBudget(app: BudgetedApp, settings: BudgetSettings) {
+  await native.createAppBudget(app, normalizeSettings(settings));
   notifyBudgetsChanged();
 }
 
 // Removes budgets. It applies immediately.
-export async function deleteBudgets(
-  db: SQLiteDatabase,
-  packageNames: readonly string[],
-) {
+export async function deleteBudgets(packageNames: readonly string[]) {
   if (packageNames.length === 0) return;
-  const placeholders = packageNames.map(() => "?").join(", ");
-  await db.runAsync(
-    `DELETE FROM ${BUDGETS_TABLE} WHERE package_name IN (${placeholders})`,
-    ...packageNames,
-  );
+  await native.deleteAppBudgets([...packageNames]);
   notifyBudgetsChanged();
 }
 
-// Saves edits to a budget. Edits apply immediately
+// Saves edits to a budget. Edits apply immediately.
 export async function updateBudget(
-  db: SQLiteDatabase,
-  packageName: string,
+  budgetId: number,
   settings: BudgetSettings,
-  now: number = Date.now(),
+  borrowedChoice: BorrowedChoice | null = null,
 ) {
-  const values = normalizeSettings(settings);
-  const result = await db.runAsync(
-    `UPDATE ${BUDGETS_TABLE} SET
-       period = ?, budget_minutes = ?, rollover_ceiling = ?, borrow_cap = ?,
-       updated_at = ?
-     WHERE package_name = ?`,
-    values.period,
-    values.budgetMinutes,
-    values.rolloverCeiling,
-    values.borrowCap,
-    now,
-    packageName,
+  await native.updateBudget(
+    budgetId,
+    normalizeSettings(settings),
+    borrowedChoice,
   );
-  if (result.changes === 0) {
-    throw new Error(`No budget found for "${packageName}"`);
-  }
   notifyBudgetsChanged();
 }

@@ -1,4 +1,4 @@
-package expo.modules.roolio.usage
+package expo.modules.roolio.core.tracking
 
 import android.app.usage.UsageEvents
 import android.app.usage.UsageStatsManager
@@ -9,8 +9,11 @@ import android.os.HandlerThread
 import android.os.Process
 import android.os.SystemClock
 import android.util.Log
+import expo.modules.roolio.core.budgets.BudgetStore
+import expo.modules.roolio.core.budgets.Periods
+import expo.modules.roolio.core.db.RoolioDatabase
 
-private const val TAG = "RoolioUsage"
+private const val TAG = "RoolioCore"
 
 // How often to read new events while the screen is on.
 private const val TICK_MS = 1_000L
@@ -54,7 +57,7 @@ internal object UsageTracker {
   }
 
   private lateinit var appContext: Context
-  private val store by lazy { UsageStore(appContext) }
+  private val store by lazy { UsageStore(RoolioDatabase.get(appContext)) }
   private val usageStats by lazy {
     appContext.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
   }
@@ -140,41 +143,46 @@ internal object UsageTracker {
     flush(force = true)
     store.deletePackages(config.packages - next.packages)
     config = next
-    next.save(appContext)
 
-    val now = System.currentTimeMillis()
-    for (app in next.apps) backfillIfNeeded(app, now)
+    for (app in next.apps) backfillIfNeeded(app)
     // Count the unsettled tail for the new apps too.
     catchUp()
   }
 
-  /** Visible ms per tracked app in its current period. Runs on the tracker thread. */
-  fun periodUsage(): Map<String, Long> {
+  /** Brings measured time up to date. Call before reading [usage]. */
+  fun prepare() {
     ensureLoaded()
     catchUp()
     flush(force = false)
-    val now = System.currentTimeMillis()
-    val usage = HashMap<String, Long>(config.apps.size)
-    for (app in config.apps) {
-      val packageName = app.packageName
-      val start = Periods.periodStart(app.period, now, config.firstDayOfWeek)
-      val fromDay = Periods.dayKey(start)
-      var total = store.sumSince(packageName, fromDay)
-      // Time not saved yet, if the last save failed.
-      for ((day, byPackage) in pending) {
-        if (day >= fromDay) total += byPackage[packageName] ?: 0L
-      }
-      settled.since(packageName)?.let { since ->
-        total += (settledUntil - maxOf(since, start)).coerceAtLeast(0L)
-      }
-      total += tailTime[packageName] ?: 0L
-      tail.since(packageName)?.let { since ->
-        total += (tailEnd - maxOf(since, start)).coerceAtLeast(0L)
-      }
-      usage[packageName] = total
-    }
-    return usage
   }
+
+  /**
+   * Visible ms of `packageNames` from `fromDay` up to `toDay` (exclusive), or
+   * up to now when `toDay` is null. Includes time not saved yet and sessions
+   * still going. Runs on the tracker thread, after [prepare].
+   */
+  fun usage(packageNames: Collection<String>, fromDay: String, toDay: String?): Long {
+    val fromMs = Periods.dayStart(fromDay)
+    val toMs = toDay?.let(Periods::dayStart) ?: Long.MAX_VALUE
+    var total = store.sumUsage(packageNames, fromDay, toDay)
+    // Time not saved yet, if the last save failed.
+    for ((day, byPackage) in pending) {
+      if (day < fromDay || (toDay != null && day >= toDay)) continue
+      for (packageName in packageNames) total += byPackage[packageName] ?: 0L
+    }
+    for (packageName in packageNames) {
+      settled.since(packageName)?.let { since -> total += overlap(since, settledUntil, fromMs, toMs) }
+      // The unsettled tail is the last few seconds, so only a range reaching
+      // now includes it.
+      if (toMs <= settledUntil) continue
+      total += tailTime[packageName] ?: 0L
+      tail.since(packageName)?.let { since -> total += overlap(since, tailEnd, fromMs, toMs) }
+    }
+    return total
+  }
+
+  private fun overlap(start: Long, end: Long, from: Long, to: Long): Long =
+    (minOf(end, to) - maxOf(start, from)).coerceAtLeast(0L)
 
   private val tick =
     object : Runnable {
@@ -200,7 +208,7 @@ internal object UsageTracker {
 
   private fun ensureLoaded() {
     if (loaded) return
-    config = TrackerConfig.load(appContext)
+    config = TrackerConfig.from(BudgetStore(RoolioDatabase.get(appContext)))
     val now = System.currentTimeMillis()
     val state = store.readState()
     if (state != null && state.checkpoint <= now) {
@@ -214,7 +222,7 @@ internal object UsageTracker {
     tailEnd = settledUntil
     loaded = true
     // Recounts any app whose history is missing, e.g. after a store upgrade.
-    for (app in config.apps) backfillIfNeeded(app, now)
+    for (app in config.apps) backfillIfNeeded(app)
   }
 
   // Reads every event since the settled line: older ones become final, the
@@ -289,9 +297,9 @@ internal object UsageTracker {
   }
 
   // Adds the app's usage from the start of its period to when live counting
-  // began, so time already spent counts against a new budget (PRD §7).
-  private fun backfillIfNeeded(app: TrackedApp, now: Long) {
-    val start = Periods.periodStart(app.period, now, config.firstDayOfWeek)
+  // began, so time already spent counts against a new budget.
+  private fun backfillIfNeeded(app: TrackedApp) {
+    val start = app.countFrom
     val coveredFrom = store.coveredFrom(app.packageName)
     if (coveredFrom != null && coveredFrom <= start) return
     val end = coveredFrom ?: settled.since(app.packageName) ?: settledUntil

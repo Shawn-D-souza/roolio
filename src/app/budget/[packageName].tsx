@@ -11,7 +11,6 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialIcons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
-import { useSQLiteContext } from "expo-sqlite";
 import { useAppTheme } from "../../theme/ThemeProvider";
 import { radius, space } from "../../theme/tokens";
 import { useBudget } from "../../hooks/budgets/useBudget";
@@ -135,7 +134,6 @@ type BudgetFormProps = {
 
 function BudgetForm({ app, budget }: BudgetFormProps) {
   const { colors } = useAppTheme();
-  const db = useSQLiteContext();
 
   const saved: BudgetSettings | null = budget && {
     period: budget.period,
@@ -185,9 +183,9 @@ function BudgetForm({ app, budget }: BudgetFormProps) {
     setSaving(true);
     try {
       if (isEditing) {
-        await updateBudget(db, app.packageName, form);
+        await updateBudget(budget.id, form);
       } else {
-        await createBudget(db, app, form);
+        await createBudget(app, form);
       }
       router.back();
     } catch {
@@ -211,8 +209,8 @@ function BudgetForm({ app, budget }: BudgetFormProps) {
   const dialogContent =
     dialog === "switch-period"
       ? {
-          /* TODO(borrowing): When the app has borrowed periods, PRD §7 requires
-           * this dialog to offer "Clear the borrowed" (future periods return to
+          /* TODO(borrowing): When the app has borrowed periods, this dialog must
+           * offer "Clear the borrowed" (future periods return to
            * full budget) and "Keep the borrowed" (owed minutes are deducted
            * from the new period's budgets). Add both actions once borrowing
            * is built. */

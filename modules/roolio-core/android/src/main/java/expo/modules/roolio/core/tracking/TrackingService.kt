@@ -1,4 +1,4 @@
-package expo.modules.roolio.usage
+package expo.modules.roolio.core.tracking
 
 import android.app.Service
 import android.content.BroadcastReceiver
@@ -12,6 +12,8 @@ import android.os.PowerManager
 import android.util.Log
 import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
+import expo.modules.roolio.core.budgets.BudgetStore
+import expo.modules.roolio.core.db.RoolioDatabase
 
 /**
  * Keeps [UsageTracker] running while other apps are in use.
@@ -55,7 +57,7 @@ class TrackingService : Service() {
       return START_NOT_STICKY
     }
     // The system may restart the service after the budgets or the permission changed.
-    if (TrackerConfig.load(this).apps.isEmpty() || !UsageAccess.isGranted(this)) {
+    if (!BudgetStore(RoolioDatabase.get(this)).hasApps() || !UsageAccess.isGranted(this)) {
       stopSelf()
       return START_NOT_STICKY
     }
@@ -91,10 +93,10 @@ class TrackingService : Service() {
       true
     } catch (error: IllegalStateException) {
       // Android 12+ refuses some background starts; the next app open restarts it.
-      Log.w("RoolioUsage", "Couldn't start tracking in the foreground", error)
+      Log.w("RoolioCore", "Couldn't start tracking in the foreground", error)
       false
     } catch (error: SecurityException) {
-      Log.w("RoolioUsage", "Couldn't start tracking in the foreground", error)
+      Log.w("RoolioCore", "Couldn't start tracking in the foreground", error)
       false
     }
   }
@@ -118,7 +120,7 @@ class TrackingService : Service() {
         ContextCompat.startForegroundService(context, Intent(context, TrackingService::class.java))
       } catch (error: IllegalStateException) {
         // Not allowed from the background right now (Android 12+).
-        Log.w("RoolioUsage", "Couldn't start tracking", error)
+        Log.w("RoolioCore", "Couldn't start tracking", error)
       }
     }
   }

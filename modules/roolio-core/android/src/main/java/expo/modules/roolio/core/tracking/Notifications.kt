@@ -1,4 +1,4 @@
-package expo.modules.roolio.usage
+package expo.modules.roolio.core.tracking
 
 import android.app.Notification
 import android.app.NotificationChannel
@@ -9,6 +9,7 @@ import android.content.Intent
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import expo.modules.roolio.core.R
 
 private const val TRACKING_CHANNEL_ID = "budget_tracking"
 private const val ALERTS_CHANNEL_ID = "permission_alerts"
@@ -41,7 +42,7 @@ internal object Notifications {
       .build()
   }
 
-  /** PRD §8.5: tells the user that tracking stopped because Usage Access was turned off. */
+  /** Tells the user that tracking stopped because Usage Access was turned off. */
   fun showAccessLost(context: Context) {
     val manager = NotificationManagerCompat.from(context)
     if (!manager.areNotificationsEnabled()) return

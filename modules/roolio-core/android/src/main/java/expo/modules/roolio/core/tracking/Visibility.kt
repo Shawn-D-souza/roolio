@@ -1,4 +1,4 @@
-package expo.modules.roolio.usage
+package expo.modules.roolio.core.tracking
 
 import android.os.Build
 import org.json.JSONArray

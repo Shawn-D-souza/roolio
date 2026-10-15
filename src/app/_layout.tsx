@@ -1,7 +1,5 @@
 import { Stack } from "expo-router";
-import { SQLiteProvider } from "expo-sqlite";
 import { ThemeProvider } from "../theme/ThemeProvider";
-import { DATABASE_NAME, migrateDatabase } from "../db/database";
 import {
   PermissionsProvider,
   usePermissions,
@@ -12,9 +10,7 @@ export default function RootLayout() {
   return (
     <ThemeProvider>
       <PermissionsProvider>
-        <SQLiteProvider databaseName={DATABASE_NAME} onInit={migrateDatabase}>
-          <RootStack />
-        </SQLiteProvider>
+        <RootStack />
       </PermissionsProvider>
     </ThemeProvider>
   );

@@ -1,9 +1,7 @@
 import { useMemo } from "react";
-import type { SQLiteDatabase } from "expo-sqlite";
 import { getUninstalledAsync } from "../../../modules/installed-apps";
 import { deleteBudgets, listBudgets } from "../../budgets/repository";
-import type { AppBudget, BudgetWithUsage } from "../../budgets/types";
-import { readUsage, syncTracking, withUsage } from "../../usage/tracking";
+import type { BudgetWithUsage } from "../../budgets/types";
 import { useBudgetQuery } from "./useBudgetQuery";
 
 const EMPTY: BudgetWithUsage[] = [];
@@ -16,9 +14,8 @@ function byAvailableTime(a: BudgetWithUsage, b: BudgetWithUsage) {
   );
 }
 
-// An uninstalled app's budget is removed. Deleting it re-syncs the
-// tracker, which drops the app's usage history too.
-async function removeUninstalled(db: SQLiteDatabase, budgets: AppBudget[]) {
+// An uninstalled app's budget is removed, with its history.
+async function removeUninstalled(budgets: BudgetWithUsage[]) {
   let uninstalled: string[];
   try {
     uninstalled = await getUninstalledAsync(
@@ -30,7 +27,7 @@ async function removeUninstalled(db: SQLiteDatabase, budgets: AppBudget[]) {
   }
   if (uninstalled.length === 0) return budgets;
   try {
-    await deleteBudgets(db, uninstalled);
+    await deleteBudgets(uninstalled);
   } catch {
     return budgets;
   }
@@ -38,14 +35,9 @@ async function removeUninstalled(db: SQLiteDatabase, budgets: AppBudget[]) {
   return budgets.filter((budget) => !removed.has(budget.packageName));
 }
 
-async function loadBudgets(db: SQLiteDatabase) {
-  const budgets = await removeUninstalled(db, await listBudgets(db));
-  // Sync first so a just-added app is tracked, with its usage so far, before the read.
-  await syncTracking(budgets).catch(() => undefined);
-  const usage = await readUsage();
-  return budgets
-    .map((budget) => withUsage(budget, usage))
-    .sort(byAvailableTime);
+async function loadBudgets() {
+  const budgets = await removeUninstalled(await listBudgets());
+  return budgets.sort(byAvailableTime);
 }
 
 export function useBudgets() {

@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
 import { AppState } from "react-native";
-import { type SQLiteDatabase, useSQLiteContext } from "expo-sqlite";
 import { subscribeToBudgetChanges } from "../../budgets/events";
 
 type Status = "loading" | "ready" | "error";
@@ -20,11 +19,7 @@ function msUntilNextMidnight() {
  * open), and at midnight, when a new period starts.
  * `load` must be stable (module-level or memoized); a new `load` reloads.
  */
-export function useBudgetQuery<T>(
-  load: (db: SQLiteDatabase) => Promise<T>,
-  initialData: T,
-) {
-  const db = useSQLiteContext();
+export function useBudgetQuery<T>(load: () => Promise<T>, initialData: T) {
   const [data, setData] = useState<T>(initialData);
   const [status, setStatus] = useState<Status>("loading");
   const [version, setVersion] = useState(0);
@@ -34,7 +29,7 @@ export function useBudgetQuery<T>(
   useEffect(() => {
     let cancelled = false;
 
-    load(db)
+    load()
       .then((result) => {
         if (cancelled) return;
         setData(result);
@@ -50,7 +45,7 @@ export function useBudgetQuery<T>(
     return () => {
       cancelled = true;
     };
-  }, [db, load, version]);
+  }, [load, version]);
 
   useEffect(() => subscribeToBudgetChanges(refresh), [refresh]);
 

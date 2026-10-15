@@ -1,14 +1,8 @@
-package expo.modules.roolio.usage
+package expo.modules.roolio.core.tracking
 
 import android.content.ContentValues
-import android.content.Context
 import android.database.sqlite.SQLiteDatabase
-import android.database.sqlite.SQLiteOpenHelper
-
-private const val DATABASE_NAME = "roolio_usage.db"
-// 3: counts visible time per activity (PiP, split-screen, dialogs from other
-// apps). Usage counted by older versions is dropped and recounted.
-private const val DATABASE_VERSION = 3
+import expo.modules.roolio.core.db.RoolioDatabase
 
 // Where the tracker resumes after the process is killed or the phone restarts.
 internal data class TrackerState(
@@ -18,64 +12,13 @@ internal data class TrackerState(
   val visible: String?,
 )
 
-/**
- * Daily foreground time per tracked app, on this device only.
- *
- * This is its own file, opened with Android's SQLite, and is never shared with
- * the JS database: two SQLite libraries in one process can't safely lock the
- * same file.
- */
-internal class UsageStore(context: Context) :
-  SQLiteOpenHelper(context.applicationContext, DATABASE_NAME, null, DATABASE_VERSION) {
+/** Daily foreground time per tracked app, in [RoolioDatabase]. */
+internal class UsageStore(private val database: RoolioDatabase) {
+  private val readableDatabase: SQLiteDatabase
+    get() = database.readableDatabase
 
-  override fun onConfigure(db: SQLiteDatabase) {
-    db.enableWriteAheadLogging()
-  }
-
-  override fun onCreate(db: SQLiteDatabase) {
-    db.execSQL(
-      """
-      CREATE TABLE daily_usage (
-        day           TEXT NOT NULL,
-        package_name  TEXT NOT NULL,
-        foreground_ms INTEGER NOT NULL,
-        PRIMARY KEY (package_name, day)
-      ) WITHOUT ROWID
-      """
-    )
-    // The earliest time from which an app's daily rows are complete.
-    db.execSQL(
-      """
-      CREATE TABLE coverage (
-        package_name TEXT PRIMARY KEY NOT NULL,
-        covered_from INTEGER NOT NULL
-      )
-      """
-    )
-    db.execSQL(
-      """
-      CREATE TABLE tracker_state (
-        id         INTEGER PRIMARY KEY CHECK (id = 0),
-        checkpoint INTEGER NOT NULL,
-        visible    TEXT
-      )
-      """
-    )
-  }
-
-  // Older versions undercounted: version 1 ended a session when any of the
-  // app's activities stopped, and version 2 when it was covered without being
-  // hidden. Their numbers can't be fixed in place, so they're dropped and the
-  // tracker recounts each app from Android's own history
-  // (see UsageTracker.backfillIfNeeded).
-  override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
-    if (oldVersion < 3) {
-      db.execSQL("DROP TABLE IF EXISTS daily_usage")
-      db.execSQL("DROP TABLE IF EXISTS coverage")
-      db.execSQL("DROP TABLE IF EXISTS tracker_state")
-      onCreate(db)
-    }
-  }
+  private val writableDatabase: SQLiteDatabase
+    get() = database.writableDatabase
 
   fun readState(): TrackerState? =
     readableDatabase
@@ -144,14 +87,24 @@ internal class UsageStore(context: Context) :
       .rawQuery("SELECT covered_from FROM coverage WHERE package_name = ?", arrayOf(packageName))
       .use { cursor -> if (cursor.moveToFirst()) cursor.getLong(0) else null }
 
-  // Total foreground time of `packageName` on `fromDay` and later.
-  fun sumSince(packageName: String, fromDay: String): Long =
-    readableDatabase
+  // Total foreground time of `packageNames` from `fromDay` up to `toDay`
+  // (exclusive), or with no end when `toDay` is null.
+  fun sumUsage(packageNames: Collection<String>, fromDay: String, toDay: String?): Long {
+    if (packageNames.isEmpty()) return 0L
+    val placeholders = packageNames.joinToString(", ") { "?" }
+    val args = ArrayList<String>(packageNames.size + 2)
+    args.addAll(packageNames)
+    args.add(fromDay)
+    if (toDay != null) args.add(toDay)
+    return readableDatabase
       .rawQuery(
-        "SELECT COALESCE(SUM(foreground_ms), 0) FROM daily_usage WHERE package_name = ? AND day >= ?",
-        arrayOf(packageName, fromDay),
+        "SELECT COALESCE(SUM(foreground_ms), 0) FROM daily_usage " +
+          "WHERE package_name IN ($placeholders) AND day >= ?" +
+          if (toDay != null) " AND day < ?" else "",
+        args.toTypedArray(),
       )
       .use { cursor -> if (cursor.moveToFirst()) cursor.getLong(0) else 0L }
+  }
 
   fun deletePackages(packageNames: Collection<String>) {
     if (packageNames.isEmpty()) return
