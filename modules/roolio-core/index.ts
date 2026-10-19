@@ -1,7 +1,6 @@
 import RoolioCoreModule from "./src/RoolioCoreModule";
 import type {
   BorrowedChoice,
-  BorrowOffer,
   BudgetApp,
   BudgetSettings,
 } from "./src/RoolioCore.types";
@@ -19,8 +18,7 @@ export const MONDAY = 2;
  * time even if nothing ran at midnight.
  *
  * Errors carry a `code`: ERR_ALREADY_BUDGETED, ERR_BUDGET_NOT_FOUND,
- * ERR_INVALID_SETTINGS, ERR_BORROWED_CHOICE_REQUIRED, ERR_TIME_LEFT,
- * ERR_NO_BORROW_SLOT.
+ * ERR_INVALID_SETTINGS, ERR_BORROWED_CHOICE_REQUIRED.
  */
 
 /** Every budget with its current period. */
@@ -59,11 +57,6 @@ export function updateBudget(
 /** Removes these apps' budgets and their history. */
 export function deleteAppBudgets(packageNames: string[]) {
   return RoolioCoreModule.deleteAppBudgetsAsync(packageNames);
-}
-
-/** Borrows the next upcoming period. Only allowed once the budget's time is used up. */
-export function borrow(budgetId: number): Promise<BorrowOffer> {
-  return RoolioCoreModule.borrowAsync(budgetId);
 }
 
 /** Sets the first day of the week; the current week keeps its end. */

@@ -51,7 +51,6 @@ internal data class PeriodRow(
   val openedAt: Long,
   val closedAt: Long?,
   val budgetMinutes: Int,
-  val borrowed: Boolean,
   val repaidMs: Long,
   val bankedInMs: Long,
   val usedMs: Long?,
@@ -59,14 +58,13 @@ internal data class PeriodRow(
   val lowAlertAt: Long?,
 ) {
   val ownBudgetMs: Long
-    get() = Ledger.ownBudgetMs(budgetMinutes, borrowed, repaidMs)
+    get() = Ledger.ownBudgetMs(budgetMinutes, repaidMs)
 }
 
 internal data class BorrowRow(
   val id: Long,
   val budgetId: Long,
   val periodId: Long,
-  val targetDay: String?,
   val amountMs: Long,
   val repaidMs: Long,
   val createdAt: Long,
@@ -234,7 +232,6 @@ internal class BudgetStore(private val database: RoolioDatabase) {
     startDay: String,
     endDay: String,
     budgetMinutes: Int,
-    borrowed: Boolean,
     repaidMs: Long,
     bankedInMs: Long,
     now: Long,
@@ -242,14 +239,13 @@ internal class BudgetStore(private val database: RoolioDatabase) {
     db.insertOrThrow(
       "periods",
       null,
-      ContentValues(9).apply {
+      ContentValues(8).apply {
         put("budget_id", budgetId)
         put("period", period.key)
         put("start_day", startDay)
         put("end_day", endDay)
         put("opened_at", now)
         put("budget_minutes", budgetMinutes)
-        put("borrowed", if (borrowed) 1 else 0)
         put("repaid_ms", repaidMs)
         put("banked_in_ms", bankedInMs)
       },
@@ -304,8 +300,8 @@ internal class BudgetStore(private val database: RoolioDatabase) {
       )
       .use { cursor -> cursor.map { it.toBorrow() } }
 
-  /** Time gained by borrowing in each period, keyed by period id. */
-  fun gainedMs(periodIds: Collection<Long>): Map<Long, Long> {
+  /** Time borrowed in each period, keyed by period id. */
+  fun borrowedMs(periodIds: Collection<Long>): Map<Long, Long> {
     if (periodIds.isEmpty()) return emptyMap()
     val placeholders = periodIds.joinToString(", ") { "?" }
     return db
@@ -314,20 +310,20 @@ internal class BudgetStore(private val database: RoolioDatabase) {
         periodIds.map { it.toString() }.toTypedArray(),
       )
       .use { cursor ->
-        val gained = HashMap<Long, Long>(cursor.count)
-        while (cursor.moveToNext()) gained[cursor.getLong(0)] = cursor.getLong(1)
-        gained
+        val borrowed = HashMap<Long, Long>(cursor.count)
+        while (cursor.moveToNext()) borrowed[cursor.getLong(0)] = cursor.getLong(1)
+        borrowed
       }
   }
 
-  fun insertBorrow(budgetId: Long, periodId: Long, targetDay: String, amountMs: Long, now: Long): Long =
+  /** Records time borrowed in a period, owed until upcoming periods pay it back. */
+  fun insertBorrow(budgetId: Long, periodId: Long, amountMs: Long, now: Long): Long =
     db.insertOrThrow(
       "borrows",
       null,
-      ContentValues(5).apply {
+      ContentValues(4).apply {
         put("budget_id", budgetId)
         put("period_id", periodId)
-        put("target_day", targetDay)
         put("amount_ms", amountMs)
         put("created_at", now)
       },
@@ -351,28 +347,6 @@ internal class BudgetStore(private val database: RoolioDatabase) {
         arrayOf(id.toString()),
       )
     }
-  }
-
-  /** Turns borrowed periods into minutes owed, for a kept borrow across a period change. */
-  fun keepBorrowsAsOwed(ids: Collection<Long>) {
-    for (id in ids) {
-      db.update(
-        "borrows",
-        ContentValues(1).apply { putNull("target_day") },
-        "id = ?",
-        arrayOf(id.toString()),
-      )
-    }
-  }
-
-  /** Moves time gained in one period to another, so it stays available. */
-  fun moveGained(fromPeriodId: Long, toPeriodId: Long) {
-    db.update(
-      "borrows",
-      ContentValues(1).apply { put("period_id", toPeriodId) },
-      "period_id = ?",
-      arrayOf(fromPeriodId.toString()),
-    )
   }
 }
 
@@ -441,7 +415,6 @@ private fun Cursor.toPeriod() =
     openedAt = long("opened_at"),
     closedAt = longOrNull("closed_at"),
     budgetMinutes = int("budget_minutes"),
-    borrowed = int("borrowed") == 1,
     repaidMs = long("repaid_ms"),
     bankedInMs = long("banked_in_ms"),
     usedMs = longOrNull("used_ms"),
@@ -454,7 +427,6 @@ private fun Cursor.toBorrow() =
     id = long("id"),
     budgetId = long("budget_id"),
     periodId = long("period_id"),
-    targetDay = stringOrNull("target_day"),
     amountMs = long("amount_ms"),
     repaidMs = long("repaid_ms"),
     createdAt = long("created_at"),

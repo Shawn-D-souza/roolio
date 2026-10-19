@@ -18,7 +18,7 @@ Traditional digital well-being apps use a fixed daily limit. When a person wants
 Each limit becomes a **budget** with banking and borrowing:
 
 - Time you don't use in a period is **banked** and can be used in later periods (rollover).
-- When you need more time, you can **borrow** the budget of an upcoming period, up to a cap.
+- When you need more time, you can keep going and **borrow** from the budgets of upcoming periods, up to a cap.
 - Changes to budgets take effect **immediately** and never change past periods.
 - Budgets can be daily (free), or weekly and monthly (premium).
 
@@ -26,7 +26,7 @@ Each limit becomes a **budget** with banking and borrowing:
 
 1. Let users set per-app budgets that feel fair and flexible.
 2. Replace "raise the limit and forget" with a built-in, capped borrowing system.
-3. Make each budget's banked time and borrowed periods always visible and easy to understand.
+3. Make each budget's banked time and borrowed time always visible and easy to understand.
 4. Earn user trust through minimal permissions and fully on-device data.
 
 ## 3. Out of scope for v1
@@ -65,11 +65,11 @@ Every budget uses exactly one **period**. An app picks one: daily, weekly, or mo
 | **Budget**           | The minutes a user allows themselves in an app (or group, or the whole phone) for one period.                    |
 | **Period**           | A day, a week, or a month (section 4).                                                                           |
 | **Banked time**      | Unused time carried forward to later periods.                                                                    |
-| **Borrowed period**  | A future period whose budget the user has already taken. When that period arrives, its budget is used up (zero). |
+| **Borrowed time**    | Minutes used beyond the current period's time. They come out of the budgets of upcoming periods, nearest first. |
 | **Rollover ceiling** | The maximum banked time, expressed in periods of that budget.                                                    |
-| **Borrow cap**       | The maximum number of future periods that can be borrowed at once.                                               |
-| **Available time**   | The minutes the user can still spend in the current period in a budget.                                          |
-| **Pause screen**     | The full-screen Roolio screen shown over an app when its available time is zero.                                 |
+| **Borrow cap**       | How many upcoming periods can be borrowed from.                                                                  |
+| **Available time**   | The minutes the user can still spend in the current period in a budget, before borrowing.                        |
+| **Pause screen**     | The full-screen Roolio screen shown over an app when its time runs out (section 8.4).                            |
 | **Exempt apps**      | Apps that can never be limited: Phone/dialer, emergency services, system Settings, and Roolio itself.            |
 
 ## 6. Budget rules (core logic)
@@ -83,9 +83,9 @@ These rules are exact. Follow them as written.
 
 ### 6.2 Available time
 
-- **Available time = current period's budget + banked time carried in + minutes gained by borrowing in this period.**
-- If the current period is a borrowed period, its budget is 0.
-- Available time is never below 0.
+- **Available time = current period's own budget + banked time carried in − time used.**
+- The **own budget** is the budget minus any minutes borrowed earlier that this period pays back (section 6.6). It is never below 0.
+- Available time is never below 0. Time used past it is borrowed time.
 
 ### 6.3 Reset
 
@@ -102,23 +102,22 @@ At reset, leftover available time from the period ending becomes banked time.
 
 ### 6.5 Spending order
 
-Time is spent in this order: the period's budget first, then banked time. When both reach zero, the pause screen appears.
+Time is spent in this order: the period's own budget first, then banked time, then, if the user chooses to keep going on the pause screen, borrowed time from upcoming periods, nearest first.
 
 ### 6.6 Borrowing
 
-- Borrowing is offered only on the pause screen, and only if the borrow cap is above 0.
-- Each borrow takes **the full budget of the next upcoming period that has not been borrowed yet**. The user does not choose an amount.
-- The minutes gained are available immediately. The borrowed period's budget becomes 0 when that period arrives.
-- The amount gained is fixed at the moment of borrowing. Later budget edits do not change it.
-- The number of borrowed future periods at once cannot exceed the **borrow cap**.
-- A borrow does not need to be repaid before borrowing again. The user can borrow repeatedly until the cap is reached.
-- As each period passes, a borrowed period becomes the current period (with a budget of 0), which frees a slot, and the user can borrow the next period ahead.
+- The budgets of the next **borrow cap** periods are already there. Borrowing does not create or move time; it only means using it early.
+- Borrowed time is counted **by the minute, as it is used**. Using 10 minutes past today's time borrows 10 minutes, not a whole period.
+- The pause screen (section 8.4) only decides when the app is stopped. A choice made there never changes the numbers by itself.
+- Borrowed time is paid back at each reset: it comes out of the next period's own budget first, and whatever that budget cannot cover moves on to the period after.
+- Borrowed time can never exceed **budget × borrow cap**, counting time still to be paid back from earlier periods. When that is used up, the app is blocked until the next reset.
+- Borrowed minutes are fixed. Later budget edits do not change how many minutes are owed.
 - Example (daily, budget 60 min, cap 3):
-  - Monday: the user runs out and borrows Tuesday's 60 min. When they run out again, they borrow Wednesday's 60, then Thursday's 60. The cap of 3 is now reached.
-  - Tuesday: the budget is 0 (borrowed). Wednesday and Thursday are still borrowed (2 of 3 slots used), so the user can borrow Friday's 60 min.
-- Example (daily, budget 60 min, cap 1): the user borrows tomorrow's 60 min today. Tomorrow's budget is 0. Once tomorrow has started, the user can borrow the day after.
-- Example (weekly, budget 10 hours, cap 1): the user borrows next week's 10 hours this week. Next week's budget is 0.
-- Banked time and borrowed periods are tracked separately. A user can have both.
+  - Monday: the user uses 1h 10m. The last 10 minutes are borrowed from Tuesday.
+  - Tuesday: the own budget is 50 min. Tuesday can borrow up to 3 hours, from Wednesday, Thursday and Friday.
+- Example (daily, budget 60 min, cap 3): on Monday the user uses 4 hours. Tuesday, Wednesday and Thursday each start with 0, and the app stayed blocked on Monday once Thursday's hour was used.
+- Example (weekly, budget 10 hours, cap 1): the user uses 12 hours this week. Next week starts with 8 hours.
+- Banked time and borrowed time are tracked separately. Since borrowing only starts once banked time is used up, a period ends with one or the other, never both.
 
 ### 6.7 Rollover ceiling and borrow cap settings (two separate settings)
 
@@ -130,7 +129,7 @@ These are chosen **per app**, on the app selection screen when the app is added 
 | Borrow cap       | 0, 1, 3, or 7 | Custom: any whole number from 0 to 7 |
 
 - **Default for every app is 1 for both.** New budgets bank up to one period of unused time and can borrow one period ahead. The user can set either to 0 to turn it off.
-- 0 rollover means unused time is lost at reset. 0 borrow cap means the pause screen never offers borrowing.
+- 0 rollover means unused time is lost at reset. 0 borrow cap means the app is blocked as soon as available time is zero, and the pause screen only offers "Close app".
 
 ## 7. Editing rules
 
@@ -148,18 +147,19 @@ All edits take effect immediately. Edits never change the past.
 
 Details:
 
-- Past periods and already-borrowed periods never change because of an edit. Time already gained by borrowing stays available.
+- Past periods and minutes already borrowed never change because of an edit.
 - If the ceiling is lowered below the current banked time, banked time is trimmed to the new ceiling immediately.
-- If the borrow cap is lowered below the number of periods already borrowed, those borrowed periods stay. No new borrowing is allowed until the borrowed periods fall under the new cap.
+- If the borrow cap is lowered below the time already borrowed, the borrowed minutes stay owed. No new borrowing is allowed until they are paid back below the new cap.
 
 **Changing an app's period type (premium):**
 
 - A period type change is never blocked. It takes effect immediately: the app switches to the new period right away, and usage already spent in the current day, week, or month counts toward the new period. Past periods are never changed.
 - A warning is shown before the change is applied, explaining that it takes effect now.
 - Banked time (in minutes) is kept and capped by the new ceiling at the switch.
-- If the app has borrowed periods, the warning offers two choices:
-  1. **Clear the borrowed:** nothing is owed anymore, and the future periods return to their full budget. Time already gained and used stays used.
-  2. **Keep the borrowed:** the borrowed amount stays exactly as it was, as a fixed number of minutes (it is not converted, so 2 borrowed days of 60 min remain 120 min owed, not 2 weeks). It is deducted from the new period's upcoming budgets. Example: 120 min owed, new weekly budget of 10 hours, so next week's available time is 8 hours.
+- If the app has borrowed time still to be paid back, the warning offers two choices:
+  1. **Clear the borrowed:** nothing is owed anymore, and the future periods return to their full budget.
+  2. **Keep the borrowed:** the borrowed minutes stay owed exactly as they are (120 min owed stays 120 min, not converted to periods). They are deducted from the new period's upcoming budgets. Example: 120 min owed, new weekly budget of 10 hours, so next week's available time is 8 hours.
+- Time borrowed in the current period is not owed separately: its usage already counts toward the new period.
 - Changing the first day of the week (Settings) takes effect at the start of the next week.
 
 ## 8. Features and requirements
@@ -178,7 +178,11 @@ Details:
 
 ### 8.2 Home screen
 
-- A card for each limited app showing: app icon and name, available time, a progress bar of usage in the current period, banked time (e.g., "Banked: 40 min"), and borrowed periods (e.g., "Borrowed: 2 days ahead", "1 week ahead", "1 month ahead").
+- A card for each limited app showing: app icon and name, available time, time used in the current period, and two bars:
+  - **This period:** its own budget and banked time as separate segments, with usage filling them in spending order. Any part of the budget that went to paying back earlier borrowing is shown as its own segment, so the bar reads as "1h budget, 10 min of it already used".
+  - **Ahead:** one segment for each upcoming period that can be borrowed from (the borrow cap), showing how much of each is already taken (e.g., "10 min borrowed", "3 days to borrow"). Hidden when the borrow cap is 0 and nothing is owed.
+- Banked time is shown in words too (e.g., "Banked: 40 min").
+- The bars only change with usage and at resets, never because of a choice on the pause screen.
 - Cards are sorted by least available time first.
 - A button to add an app. When a free user already has 3 apps, this opens the premium paywall.
 - Tapping a card opens App detail.
@@ -186,20 +190,29 @@ Details:
 
 ### 8.3 App detail
 
-- Shows usage in the current period, available time, banked time, borrowed periods, budget and period, and rollover ceiling and borrow cap for this app.
+- Shows usage in the current period, available time, banked time, borrowed time, budget and period, and rollover ceiling and borrow cap for this app.
 - Edit budget, period (premium), rollover ceiling, and borrow cap (follows the editing rules in section 7).
 - Remove budget (follows section 7).
 - Free users see only the current period's numbers. Premium users also see history (section 8.7).
 
 ### 8.4 Pause screen
 
-Shown full-screen over an app when its available time is zero, both when the user opens the app and when time runs out during use.
+Shown full-screen over an app at each stopping point, both when the user opens the app and when a stopping point is reached during use. It only decides when the app is stopped; it never changes budgets, banked time or borrowed time.
 
-- Shows: app name, "You've used your time", and current banked time (zero at this point) and borrowed periods.
-- **Borrow button:** shown only if a borrowing slot remains under the cap. It states exactly what the user will get, for example "Borrow Tuesday's 60 min", "Borrow next week's 10 hours", or "Borrow next month's 40 hours". The screen also shows how many borrowing slots are left (e.g., "2 of 3 left").
-- **Close app button:** returns the user to the home screen.
-- If no slot remains (or borrowing is off), only "Close app" is shown, with a note about when the budget resets or when more borrowing becomes available.
-- The pause screen cannot be dismissed in any way that lets the user stay in the app without borrowing.
+**Stopping points:**
+
+- When the current period's available time reaches zero.
+- After that, at the end of each upcoming period's budget the user chose to borrow from (one stop per period, up to the borrow cap).
+- After "5 more minutes", when those 5 minutes end.
+
+**Choices:**
+
+- **Close app:** returns the user to the home screen.
+- **5 more minutes:** keeps the app open for 5 minutes, borrowed from the next period. When they end, the app closes, and the pause screen appears again.
+- **Use [next period]'s time:** keeps the app open until that period's remaining budget is used, for example "Use Tuesday's 50 min", "Use next week's 10 hours". The screen shows how many periods are left to borrow from (e.g., "2 of 3 left").
+- The borrowing choices are shown only while borrowing is possible. When the cap is reached (or borrowing is off), only "Close app" is shown, with a note about when the budget resets.
+- Reopening the app after a choice continues to the same stopping point; the pause screen is not shown again before it.
+- The pause screen cannot be dismissed in any way that lets the user stay in the app without choosing.
 
 ### 8.5 Notifications
 
@@ -221,16 +234,16 @@ Premium unlocks:
 
 1. **Unlimited apps:** free users can limit up to 3 apps.
 2. **Weekly and monthly budgets:** section 4.
-3. **Total phone budget:** one budget across all non-exempt apps, with its own period (daily, weekly, or monthly), banked time, borrowed periods, ceiling, and cap, following the same rules. Time in any app counts against both its own budget and the total. If either budget reaches zero, the app is blocked. If both are at zero, the pause screen offers borrowing for each exhausted budget separately.
-4. **App groups:** a group (e.g., "Social") shares one budget with its own period, banked time, borrowed periods, ceiling, and cap. An app can be in at most one group, and an app in a group does not also have its own individual budget.
+3. **Total phone budget:** one budget across all non-exempt apps, with its own period (daily, weekly, or monthly), banked time, borrowed time, ceiling, and cap, following the same rules. Time in any app counts against both its own budget and the total. If either budget reaches zero, the app is blocked. If both are at zero, the pause screen offers borrowing for each exhausted budget separately, and the app is stopped at whichever stopping point comes first.
+4. **App groups:** a group (e.g., "Social") shares one budget with its own period, banked time, borrowed time, ceiling, and cap. An app can be in at most one group, and an app in a group does not also have its own individual budget.
 5. **Custom ceiling and cap:** section 6.7.
 6. **Stats and history:** for each budget, the complete history since the budget was created, shown per period (days, weeks, or months, matching the budget's period) as usage against budget, plus banked and borrowed totals. History is never deleted automatically and is stored on the device only. It is lost only if the app or Roolio is uninstalled (no backup in v1).
 
 ## 9. Edge cases
 
-- **Permission revoked:** Roolio stops enforcing budgets, shows a banner on Home, and sends a notification with a shortcut to re-grant. Budgets, banked time, and borrowed periods are kept.
+- **Permission revoked:** Roolio stops enforcing budgets, shows a banner on Home, and sends a notification with a shortcut to re-grant. Budgets, banked time, and borrowed time are kept.
 - **Time zone or clock change:** Period starts follow device local time. One reset per period start (section 4).
-- **Unused borrowed time:** Time gained by borrowing that is still unused at the end of the period is treated like any other leftover and rolls into banked time (subject to the ceiling).
+- **Unused borrowed time:** There is none. Borrowed time is counted only as it is used, so choosing to borrow and then not using the time costs nothing.
 - **Premium lapses:**
   - Only 3 apps stay enforced: the 3 daily-budget apps added earliest. Other apps keep their settings but are not enforced until the user upgrades.
   - Apps with weekly or monthly budgets are not enforced. They keep their settings.
@@ -239,7 +252,7 @@ Premium unlocks:
   - Stats are locked but kept.
 - **App uninstalled:** Its budget and history are removed.
 - **App reinstalled or Roolio uninstalled:** Data is lost (no backup in v1). Settings explains this.
-- **Phone restarted:** Budgets, banked time, borrowed periods, and usage so far persist.
+- **Phone restarted:** Budgets, banked time, borrowed time, and usage so far persist.
 - **Exempt apps:** Never counted, never blocked, never listed.
 - **No apps added:** Home shows an empty state with a button to add the first app.
 
@@ -270,7 +283,7 @@ Revisit after launch, based on user feedback and reliability data (reviews, unin
 **Privacy principles:**
 
 - No account and no login.
-- All data (budgets, banked time, borrowed periods, usage, history) is stored only on the user's device.
+- All data (budgets, banked time, borrowed time, usage, history) is stored only on the user's device.
 - Nothing is uploaded to any server. Roolio does not collect, share, or sell user data.
 - No ads.
 - Subscription payment and restore are handled by Google Play.
@@ -304,6 +317,6 @@ Revisit after launch, based on user feedback and reliability data (reviews, unin
 3. As a user, I want to borrow an upcoming period's budget when I need more, so I don't have to change my limit and forget to change it back.
 4. As a user, I want my edits to take effect right away so my budget always matches what I set.
 5. As a user, I want to choose per app whether time rolls over and whether I can borrow, with sensible defaults (one period each) that I can change or turn off.
-6. As a user, I want to see my banked time and borrowed periods for each app at a glance so I always know where I stand.
+6. As a user, I want to see my banked time and borrowed time for each app at a glance so I always know where I stand.
 7. As a user, I want my data to stay on my phone so I can trust the app.
 8. As a premium user, I want weekly and monthly budgets, unlimited apps, a total budget, groups, and custom settings so I can tailor Roolio to my habits.

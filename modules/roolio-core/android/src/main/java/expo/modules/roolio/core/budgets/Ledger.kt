@@ -7,44 +7,56 @@ internal const val MINUTE_MS = 60_000L
  * All amounts are ms.
  *
  * Within a period, time is spent from the period's own budget first, then
- * banked time, then time gained by borrowing, which is only offered once
- * the other two are gone.
+ * banked time, then borrowed time: the budgets of upcoming periods, nearest
+ * first. Borrowed time is counted as it is used, and paid back from the own
+ * budgets of the periods after this one.
  */
 internal object Ledger {
-  /** The period's own budget: 0 if it was borrowed, less any minutes owed it repays. */
-  fun ownBudgetMs(budgetMinutes: Int, borrowed: Boolean, repaidMs: Long): Long =
-    if (borrowed) 0L else (budgetMinutes * MINUTE_MS - repaidMs).coerceAtLeast(0L)
+  /**
+   * Usage as the ledger counts it: whole minutes, rounded down (PRD 6.1).
+   * Every amount derived from it is then a whole number of minutes, so the
+   * numbers shown always add up.
+   */
+  fun countedMs(usedMs: Long): Long = usedMs - usedMs % MINUTE_MS
 
-  /** Time still available in the period, never below 0. */
-  fun availableMs(ownBudgetMs: Long, bankedInMs: Long, gainedMs: Long, usedMs: Long): Long =
-    (ownBudgetMs + bankedInMs + gainedMs - usedMs).coerceAtLeast(0L)
+  /** The period's own budget: less any minutes borrowed earlier that it pays back. */
+  fun ownBudgetMs(budgetMinutes: Int, repaidMs: Long): Long =
+    (budgetMinutes * MINUTE_MS - repaidMs).coerceAtLeast(0L)
+
+  /** Time still available in the period before borrowing, never below 0. */
+  fun availableMs(ownBudgetMs: Long, bankedInMs: Long, usedMs: Long): Long =
+    (ownBudgetMs + bankedInMs - usedMs).coerceAtLeast(0L)
 
   /** Banked time not spent yet. */
   fun bankedLeftMs(ownBudgetMs: Long, bankedInMs: Long, usedMs: Long): Long =
     (bankedInMs - (usedMs - ownBudgetMs).coerceAtLeast(0L)).coerceIn(0L, bankedInMs)
 
-  /** Time gained by borrowing that is not spent yet. */
-  fun gainedLeftMs(ownBudgetMs: Long, bankedInMs: Long, gainedMs: Long, usedMs: Long): Long =
-    (gainedMs - (usedMs - ownBudgetMs - bankedInMs).coerceAtLeast(0L)).coerceIn(0L, gainedMs)
+  /** Time used past the period's own budget and banked time. */
+  fun borrowedMs(ownBudgetMs: Long, bankedInMs: Long, usedMs: Long): Long =
+    (usedMs - ownBudgetMs - bankedInMs).coerceAtLeast(0L)
 
   /** The most banked time a budget can hold. */
   fun bankCapMs(budgetMinutes: Int, rolloverCeiling: Int): Long =
     budgetMinutes * MINUTE_MS * rolloverCeiling
 
-  /**
-   * Time banked at reset: everything left in the period, including unused
-   * borrowed time, up to the cap. The rest is lost.
-   */
+  /** The most borrowed time a budget can owe at once. */
+  fun borrowCapMs(budgetMinutes: Int, borrowCap: Int): Long =
+    budgetMinutes * MINUTE_MS * borrowCap
+
+  /** Time banked at reset: everything left in the period, up to the cap. The rest is lost. */
   fun bankedAtResetMs(availableMs: Long, capMs: Long): Long = minOf(availableMs, capMs)
 
   /**
-   * Minutes owed after a period change, as the number of upcoming periods they
-   * take from. These count against the borrow cap like borrowed periods.
+   * How much of each upcoming period's budget is already taken, nearest
+   * first, when `takenMs` is owed in total. Covers at least `count` periods,
+   * and more if needed to show everything owed, up to `maxCount`.
    */
-  fun owedPeriods(owedMs: Long, budgetMinutes: Int): Int {
-    if (owedMs <= 0L) return 0
+  fun upcomingTakenMs(takenMs: Long, budgetMinutes: Int, count: Int, maxCount: Int): List<Long> {
     val budgetMs = budgetMinutes * MINUTE_MS
-    return ((owedMs + budgetMs - 1) / budgetMs).toInt()
+    val needed = if (takenMs <= 0L) 0 else ((takenMs + budgetMs - 1) / budgetMs).toInt()
+    return List(maxOf(count, needed).coerceAtMost(maxCount)) { index ->
+      (takenMs - index * budgetMs).coerceIn(0L, budgetMs)
+    }
   }
 
   /** Splits `amountMs` across outstanding debts, oldest first. Returns how much each repays. */

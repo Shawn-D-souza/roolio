@@ -7,7 +7,6 @@ import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
 import expo.modules.kotlin.records.Field
 import expo.modules.kotlin.records.Record
-import expo.modules.roolio.core.budgets.BorrowOffer
 import expo.modules.roolio.core.budgets.BorrowedChoice
 import expo.modules.roolio.core.budgets.BudgetException
 import expo.modules.roolio.core.budgets.BudgetPeriod
@@ -65,7 +64,7 @@ class RoolioCoreModule : Module() {
             mapOf(
               "usedMs" to past.row.usedMs?.toDouble(),
               "bankedOutMs" to past.row.bankedOutMs?.toDouble(),
-              "gainedMs" to past.gainedMs.toDouble(),
+              "borrowedMs" to past.borrowedMs.toDouble(),
               "closedAt" to past.row.closedAt?.toDouble(),
             )
         }
@@ -100,10 +99,6 @@ class RoolioCoreModule : Module() {
         Budgets.deleteAppBudgets(packageNames)
         null
       }
-    }
-
-    AsyncFunction("borrowAsync") { budgetId: Double, promise: Promise ->
-      onTracker(promise) { offerToMap(Budgets.borrow(budgetId.toLong())) }
     }
 
     AsyncFunction("setFirstDayOfWeekAsync") { day: Int, promise: Promise ->
@@ -173,13 +168,20 @@ private fun statusToMap(status: BudgetStatus): Map<String, Any?> {
       periodToMap(current.row) +
         mapOf(
           "usedMs" to current.usedMs.toDouble(),
+          "ownBudgetMs" to current.ownBudgetMs.toDouble(),
           "availableMs" to current.availableMs.toDouble(),
           "bankedMs" to current.bankedMs.toDouble(),
-          "gainedMs" to current.gainedMs.toDouble(),
-          "gainedLeftMs" to current.gainedLeftMs.toDouble(),
-          "borrowedPeriods" to current.borrowedPeriods,
+          "borrowedMs" to current.borrowedMs.toDouble(),
           "owedMs" to current.owedMs.toDouble(),
-          "nextBorrow" to current.nextBorrow?.let(::offerToMap),
+          "borrowLeftMs" to current.borrowLeftMs.toDouble(),
+          "upcoming" to
+            current.upcoming.map { upcoming ->
+              mapOf(
+                "startDay" to upcoming.startDay,
+                "budgetMs" to upcoming.budgetMs.toDouble(),
+                "takenMs" to upcoming.takenMs.toDouble(),
+              )
+            },
         ),
   )
 }
@@ -190,14 +192,6 @@ private fun periodToMap(row: PeriodRow): Map<String, Any?> =
     "startDay" to row.startDay,
     "endDay" to row.endDay,
     "budgetMinutes" to row.budgetMinutes,
-    "borrowed" to row.borrowed,
     "repaidMs" to row.repaidMs.toDouble(),
     "bankedInMs" to row.bankedInMs.toDouble(),
-  )
-
-private fun offerToMap(offer: BorrowOffer): Map<String, Any?> =
-  mapOf(
-    "targetDay" to offer.targetDay,
-    "amountMs" to offer.amountMs.toDouble(),
-    "slotsLeft" to offer.slotsLeft,
   )

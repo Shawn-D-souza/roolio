@@ -54,7 +54,9 @@ export function UsageSummary({ budget }: { budget: BudgetWithUsage }) {
       </View>
       <UsageBar
         usedMinutes={budget.usedMinutes}
-        budgetMinutes={budget.budgetMinutes}
+        repaidMinutes={budget.repaidMinutes}
+        budgetMinutes={budget.ownBudgetMinutes}
+        bankedMinutes={budget.bankedInMinutes}
         state={state}
       />
       <Text style={[styles.usage, { color: colors.onSurfaceVariant }]}>

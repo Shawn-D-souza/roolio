@@ -4,32 +4,28 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { useAppTheme } from "../../theme/ThemeProvider";
 import { radius, space } from "../../theme/tokens";
 import type { BudgetWithUsage } from "../../budgets/types";
-import {
-  currentPeriodLabel,
-  formatDuration,
-  formatPeriodCount,
-  formatUsage,
-  periodLabel,
-} from "../../budgets/format";
+import { currentPeriodLabel, formatDuration } from "../../budgets/format";
 import { timeLeftState } from "../../budgets/rules";
 import { AppIcon } from "../addApp/AppIcon";
 import { UsageBar } from "../budget/UsageBar";
+import { BorrowAhead, borrowAheadLabel } from "../budget/BorrowAhead";
 
 type BudgetCardProps = {
   budget: BudgetWithUsage;
   onPress: (budget: BudgetWithUsage) => void;
 };
 
+// Where an app stands right now: time left this period, and what can still
+// be borrowed from the periods ahead. The settings behind it live in App
+// detail.
 export const BudgetCard = memo(function BudgetCard({
   budget,
   onPress,
 }: BudgetCardProps) {
   const { colors } = useAppTheme();
-  const rollover = formatPeriodCount(budget.rolloverCeiling, budget.period);
-  const borrow = formatPeriodCount(budget.borrowCap, budget.period);
   const state = timeLeftState(budget.availableMinutes);
   const when = currentPeriodLabel(budget.period);
-  const usage = `${formatUsage(budget.usedMinutes, budget.budgetMinutes)} ${when}`;
+  const used = `${formatDuration(budget.usedMinutes)} used ${when}`;
 
   // Low and out of time are told by an icon and words too, never by color alone.
   const amountColor =
@@ -41,6 +37,29 @@ export const BudgetCard = memo(function BudgetCard({
   const amount =
     state === "out" ? "Time's up" : formatDuration(budget.availableMinutes);
   const amountCaption = state === "out" ? `for ${when}` : `left ${when}`;
+
+  // Each labels a segment of the bar, so it stays while the period has that
+  // segment, even once it's spent.
+  const banked =
+    budget.bankedInMinutes > 0
+      ? `Banked: ${formatDuration(budget.bankedMinutes)}`
+      : null;
+  const repaid =
+    budget.repaidMinutes > 0
+      ? `Paid back: ${formatDuration(budget.repaidMinutes)}`
+      : null;
+  const showAhead = budget.upcoming.length > 0;
+
+  const label = [
+    budget.appName,
+    `${amount} ${amountCaption}`,
+    used,
+    repaid,
+    banked,
+    showAhead ? borrowAheadLabel(budget) : null,
+  ]
+    .filter(Boolean)
+    .join(". ");
 
   return (
     <View
@@ -56,8 +75,8 @@ export const BudgetCard = memo(function BudgetCard({
         onPress={() => onPress(budget)}
         android_ripple={{ color: colors.surfaceContainerHighest }}
         accessibilityRole="button"
-        accessibilityLabel={`${budget.appName}, ${amount} ${amountCaption}. ${usage}`}
-        accessibilityHint="Opens budget settings"
+        accessibilityLabel={label}
+        accessibilityHint="Opens app details"
         style={styles.pressable}
       >
         <View style={styles.header}>
@@ -65,7 +84,7 @@ export const BudgetCard = memo(function BudgetCard({
             packageName={budget.packageName}
             appName={budget.appName}
             updatedAt={budget.iconVersion}
-            size={48}
+            size={44}
           />
           <View style={styles.titleBlock}>
             <Text
@@ -74,8 +93,11 @@ export const BudgetCard = memo(function BudgetCard({
             >
               {budget.appName}
             </Text>
-            <Text style={[styles.meta, { color: colors.onSurfaceVariant }]}>
-              {periodLabel(budget.period)}
+            <Text
+              style={[styles.used, { color: colors.onSurfaceVariant }]}
+              numberOfLines={1}
+            >
+              {used}
             </Text>
           </View>
           <View style={styles.amount}>
@@ -105,43 +127,48 @@ export const BudgetCard = memo(function BudgetCard({
           </View>
         </View>
 
-        <View style={styles.usage}>
-          <UsageBar
-            usedMinutes={budget.usedMinutes}
-            budgetMinutes={budget.budgetMinutes}
-            state={state}
-          />
-          <Text style={[styles.usageText, { color: colors.onSurfaceVariant }]}>
-            {usage}
-          </Text>
-        </View>
+        <UsageBar
+          usedMinutes={budget.usedMinutes}
+          repaidMinutes={budget.repaidMinutes}
+          budgetMinutes={budget.ownBudgetMinutes}
+          bankedMinutes={budget.bankedInMinutes}
+          state={state}
+        />
 
-        <View style={styles.settings}>
-          <SettingLabel
-            icon="savings"
-            label={`Rollover ${rollover.toLowerCase()}`}
-          />
-          <SettingLabel icon="redo" label={`Borrow ${borrow.toLowerCase()}`} />
-        </View>
+        {(repaid || banked) && (
+          <View style={styles.chips}>
+            {repaid && <Chip label={repaid} tone="borrowed" />}
+            {banked && <Chip label={banked} tone="banked" />}
+          </View>
+        )}
+
+        {showAhead && (
+          <>
+            <View
+              style={[
+                styles.divider,
+                { backgroundColor: colors.outlineVariant },
+              ]}
+            />
+            <BorrowAhead budget={budget} />
+          </>
+        )}
       </Pressable>
     </View>
   );
 });
 
-function SettingLabel({
-  icon,
-  label,
-}: {
-  icon: keyof typeof MaterialIcons.glyphMap;
-  label: string;
-}) {
+// The word in the label ("Banked", "Paid back") carries the meaning; the
+// color matches its segment in the bar.
+function Chip({ label, tone }: { label: string; tone: "banked" | "borrowed" }) {
   const { colors } = useAppTheme();
+  const [background, foreground] =
+    tone === "banked"
+      ? [colors.primaryContainer, colors.onPrimaryContainer]
+      : [colors.borrowedContainer, colors.onBorrowedContainer];
   return (
-    <View style={styles.setting}>
-      <MaterialIcons name={icon} size={16} color={colors.onSurfaceVariant} />
-      <Text style={[styles.settingText, { color: colors.onSurfaceVariant }]}>
-        {label}
-      </Text>
+    <View style={[styles.chip, { backgroundColor: background }]}>
+      <Text style={[styles.chipText, { color: foreground }]}>{label}</Text>
     </View>
   );
 }
@@ -169,8 +196,9 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: "600",
   },
-  meta: {
+  used: {
     fontSize: 13,
+    fontVariant: ["tabular-nums"],
   },
   amount: {
     alignItems: "flex-end",
@@ -191,25 +219,22 @@ const styles = StyleSheet.create({
   amountCaption: {
     fontSize: 12,
   },
-  usage: {
-    gap: space.sm,
-  },
-  usageText: {
-    fontSize: 13,
-    fontVariant: ["tabular-nums"],
-  },
-  settings: {
+  chips: {
     flexDirection: "row",
     flexWrap: "wrap",
-    columnGap: space.lg,
-    rowGap: space.xs,
+    gap: space.sm,
   },
-  setting: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: space.xs,
+  chip: {
+    borderRadius: radius.full,
+    paddingHorizontal: space.md,
+    paddingVertical: space.xs,
   },
-  settingText: {
+  chipText: {
     fontSize: 13,
+    fontWeight: "600",
+    fontVariant: ["tabular-nums"],
+  },
+  divider: {
+    height: StyleSheet.hairlineWidth,
   },
 });

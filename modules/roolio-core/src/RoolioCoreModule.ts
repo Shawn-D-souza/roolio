@@ -1,7 +1,6 @@
 import { NativeModule, requireNativeModule } from "expo";
 import type {
   BorrowedChoice,
-  BorrowOffer,
   BudgetApp,
   BudgetRecord,
   BudgetSettings,
@@ -22,7 +21,6 @@ declare class RoolioCoreModule extends NativeModule<{}> {
     borrowedChoice: BorrowedChoice | null,
   ): Promise<void>;
   deleteAppBudgetsAsync(packageNames: string[]): Promise<void>;
-  borrowAsync(budgetId: number): Promise<BorrowOffer>;
   setFirstDayOfWeekAsync(day: number): Promise<void>;
   syncTrackingAsync(): Promise<void>;
   isTrackingActive(): boolean;

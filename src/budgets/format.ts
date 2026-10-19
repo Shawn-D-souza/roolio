@@ -57,6 +57,19 @@ export function formatPeriods(count: number, period: BudgetPeriod) {
   return `${count} ${periodNoun(period, count)}`;
 }
 
+const NEXT_PERIOD: Record<BudgetPeriod, string> = {
+  day: "Tomorrow",
+  week: "Next week",
+  month: "Next month",
+};
+
+// "Tomorrow", "Next week", "Next 3 days".
+export function formatUpcoming(count: number, period: BudgetPeriod) {
+  return count === 1
+    ? NEXT_PERIOD[period]
+    : `Next ${formatPeriods(count, period)}`;
+}
+
 // Like `formatPeriods`, but 0 reads as "Off".
 export function formatPeriodCount(count: number, period: BudgetPeriod) {
   return count === 0 ? "Off" : formatPeriods(count, period);

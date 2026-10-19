@@ -9,13 +9,16 @@ private const val DATABASE_NAME = "roolio.db"
 
 /*
  * Ordered schema migrations. Entry `i` upgrades the database from version `i`
- * to `i + 1`. Never edit a shipped migration; append a new one.
+ * to `i + 1`. Never edit a shipped migration; append a new one. (None has
+ * shipped yet: Roolio is unreleased, so the first one is still edited in place.)
  *
  * Android 7 ships SQLite 3.9, so no UPSERT (3.24), STRICT tables (3.37) or
  * ALTER TABLE RENAME COLUMN (3.25).
  *
  * Conventions: timestamps are epoch ms. Durations measured from usage are ms
- * (`_ms`); the budget the user sets is whole minutes (`budget_minutes`). Days
+ * (`_ms`); the budget the user sets is whole minutes (`budget_minutes`).
+ * Ledger amounts (`repaid_ms`, `banked_*_ms`, `amount_ms`) are settled from
+ * whole minutes of use, so they are always whole minutes too. Days
  * are device-local dates as "YYYY-MM-DD" (see Periods.dayKey), so they sort in
  * date order and keep one period per local date when the time zone changes.
  */
@@ -40,7 +43,7 @@ private val MIGRATIONS: List<List<String>> =
         budget_minutes   INTEGER NOT NULL CHECK (budget_minutes > 0),
         -- Most banked time, in periods of this budget.
         rollover_ceiling INTEGER NOT NULL CHECK (rollover_ceiling BETWEEN 0 AND 7),
-        -- Most future periods borrowed at once.
+        -- How many upcoming periods can be borrowed from.
         borrow_cap       INTEGER NOT NULL CHECK (borrow_cap BETWEEN 0 AND 7),
         created_at       INTEGER NOT NULL,
         updated_at       INTEGER NOT NULL,
@@ -76,9 +79,7 @@ private val MIGRATIONS: List<List<String>> =
         closed_at      INTEGER,
         -- The budget setting, kept in step with edits while open.
         budget_minutes INTEGER NOT NULL CHECK (budget_minutes > 0),
-        -- 1 if this period was borrowed earlier, so its own budget is 0.
-        borrowed       INTEGER NOT NULL DEFAULT 0 CHECK (borrowed IN (0, 1)),
-        -- Minutes owed after a period change, taken from this budget.
+        -- Borrowed time from earlier periods, paid back from this budget.
         repaid_ms      INTEGER NOT NULL DEFAULT 0 CHECK (repaid_ms >= 0),
         -- Banked time carried in at the start.
         banked_in_ms   INTEGER NOT NULL DEFAULT 0 CHECK (banked_in_ms >= 0),
@@ -94,18 +95,15 @@ private val MIGRATIONS: List<List<String>> =
       """,
       "CREATE UNIQUE INDEX periods_single_open ON periods (budget_id) WHERE closed_at IS NULL",
       "CREATE INDEX periods_by_start ON periods (budget_id, start_day)",
-      // Each borrow of an upcoming period's budget. A borrow is
-      // outstanding until fully repaid or cleared.
+      // Time a period used past its own budget and banked time, owed by the
+      // periods after it. Outstanding until fully repaid or cleared.
       """
       CREATE TABLE borrows (
         id         INTEGER PRIMARY KEY,
         budget_id  INTEGER NOT NULL REFERENCES budgets (id) ON DELETE CASCADE,
-        -- The period its minutes were added to.
+        -- The period that borrowed it.
         period_id  INTEGER NOT NULL REFERENCES periods (id) ON DELETE CASCADE,
-        -- The start_day of the period taken. NULL once kept as minutes owed
-        -- across a period change.
-        target_day TEXT,
-        -- Fixed at the moment of borrowing.
+        -- Fixed when that period closes.
         amount_ms  INTEGER NOT NULL CHECK (amount_ms > 0),
         repaid_ms  INTEGER NOT NULL DEFAULT 0,
         created_at INTEGER NOT NULL,

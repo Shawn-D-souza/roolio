@@ -11,12 +11,17 @@ import type {
 
 const MINUTE_MS = 60_000;
 
-// Used time rounds down and available time up, so a budget never reads as
-// used up while time is left.
+// The native ledger counts whole minutes, so this is an exact conversion, not
+// a rounding decision.
+function toMinutes(ms: number) {
+  return Math.round(ms / MINUTE_MS);
+}
+
 function toBudgetWithUsage(record: BudgetRecord): BudgetWithUsage | null {
   const app = record.apps[0];
   if (record.kind !== "app" || !app) return null;
   const { current } = record;
+  const ownBudgetMinutes = toMinutes(current.ownBudgetMs);
   return {
     ...app,
     id: record.id,
@@ -26,12 +31,21 @@ function toBudgetWithUsage(record: BudgetRecord): BudgetWithUsage | null {
     borrowCap: record.borrowCap,
     createdAt: record.createdAt,
     updatedAt: record.updatedAt,
-    usedMinutes: Math.floor(current.usedMs / MINUTE_MS),
-    availableMinutes: Math.ceil(current.availableMs / MINUTE_MS),
-    bankedMinutes: Math.floor(current.bankedMs / MINUTE_MS),
-    borrowedPeriods: current.borrowedPeriods,
-    owedMinutes: Math.ceil(current.owedMs / MINUTE_MS),
-    nextBorrow: current.nextBorrow,
+    usedMinutes: toMinutes(current.usedMs),
+    availableMinutes: toMinutes(current.availableMs),
+    // The rest of this period's budget went to paying back earlier borrowing.
+    repaidMinutes: current.budgetMinutes - ownBudgetMinutes,
+    ownBudgetMinutes,
+    bankedInMinutes: toMinutes(current.bankedInMs),
+    bankedMinutes: toMinutes(current.bankedMs),
+    borrowedMinutes: toMinutes(current.borrowedMs),
+    owedMinutes: toMinutes(current.owedMs),
+    borrowLeftMinutes: toMinutes(current.borrowLeftMs),
+    upcoming: current.upcoming.map((period) => ({
+      startDay: period.startDay,
+      budgetMinutes: toMinutes(period.budgetMs),
+      takenMinutes: toMinutes(period.takenMs),
+    })),
   };
 }
 

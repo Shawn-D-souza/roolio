@@ -9,11 +9,11 @@ import expo.modules.roolio.core.tracking.UsageTracker
 /** A rule rejected a change. `code` is passed to JS as the error code. */
 internal class BudgetException(val code: String, message: String) : RuntimeException(message)
 
-/** What happens to borrowed periods when a budget changes period. */
+/** What happens to borrowed time still owed when a budget changes period. */
 internal enum class BorrowedChoice(val key: String) {
   // Nothing is owed anymore; future periods get their full budget back.
   CLEAR("clear"),
-  // The borrowed minutes stay owed and come out of the new period's upcoming budgets.
+  // The owed minutes stay owed and come out of the new period's upcoming budgets.
   KEEP("keep");
 
   companion object {
@@ -27,25 +27,28 @@ internal enum class BorrowedChoice(val key: String) {
 
 internal data class NewApp(val packageName: String, val appName: String, val iconVersion: Long)
 
-/** What the next borrow would take, e.g. "Borrow Tuesday's 60 min, 2 of 3 left". */
-internal data class BorrowOffer(val targetDay: String, val amountMs: Long, val slotsLeft: Int)
+/** An upcoming period whose budget can be borrowed from, and how much of it is already taken. */
+internal data class UpcomingPeriod(val startDay: String, val budgetMs: Long, val takenMs: Long)
 
 /** The current period of a budget, worked out to now. */
 internal data class CurrentPeriod(
   val row: PeriodRow,
   val usedMs: Long,
+  // The period's budget less what it paid back of earlier borrowing.
+  val ownBudgetMs: Long,
+  // Time left before borrowing.
   val availableMs: Long,
   // Banked time not spent yet.
   val bankedMs: Long,
-  // Time gained by borrowing in this period, and how much of it is left.
-  val gainedMs: Long,
-  val gainedLeftMs: Long,
-  // Upcoming periods already borrowed, e.g. "Borrowed: 2 days ahead".
-  val borrowedPeriods: Int,
-  // Minutes still owed after a period change.
+  // Time used past this period's own budget and banked time.
+  val borrowedMs: Long,
+  // Borrowed in earlier periods and not paid back yet.
   val owedMs: Long,
-  // Null when the borrow cap is reached or borrowing is off.
-  val nextBorrow: BorrowOffer?,
+  // Time that can still be borrowed under the cap.
+  val borrowLeftMs: Long,
+  // The periods borrowed time comes out of, nearest first: one per borrow
+  // cap, or more while owed time reaches further.
+  val upcoming: List<UpcomingPeriod>,
 )
 
 internal data class BudgetStatus(
@@ -54,7 +57,7 @@ internal data class BudgetStatus(
   val current: CurrentPeriod,
 )
 
-internal data class PastPeriod(val row: PeriodRow, val gainedMs: Long)
+internal data class PastPeriod(val row: PeriodRow, val borrowedMs: Long)
 
 private val MAX_BUDGET_MINUTES =
   mapOf(BudgetPeriod.DAY to 24 * 60, BudgetPeriod.WEEK to 7 * 24 * 60, BudgetPeriod.MONTH to 31 * 24 * 60)
@@ -108,8 +111,8 @@ internal object Budgets {
   fun history(budgetId: Long, now: Long = System.currentTimeMillis()): List<PastPeriod> {
     list(now)
     val periods = store.closedPeriods(budgetId)
-    val gained = store.gainedMs(periods.map { it.id })
-    return periods.map { PastPeriod(it, gained[it.id] ?: 0L) }
+    val borrowed = store.borrowedMs(periods.map { it.id })
+    return periods.map { PastPeriod(it, borrowed[it.id] ?: 0L) }
   }
 
   /** Adds a budget for one app. It applies immediately, counting time already spent. */
@@ -150,7 +153,7 @@ internal object Budgets {
       if (settings.period != budget.settings.period) {
         switchPeriod(budget, apps, open, settings, choice, now, fdow)
       } else {
-        val ownBudgetMs = Ledger.ownBudgetMs(settings.budgetMinutes, open.borrowed, open.repaidMs)
+        val ownBudgetMs = Ledger.ownBudgetMs(settings.budgetMinutes, open.repaidMs)
         var bankedInMs = open.bankedInMs
         // A lowered ceiling trims banked time right away.
         if (settings.rolloverCeiling < budget.settings.rolloverCeiling) {
@@ -183,29 +186,6 @@ internal object Budgets {
   }
 
   /**
-   * Borrows the full budget of the next upcoming period not borrowed yet. Only allowed once the budget's time is used up, as on the pause
-   * screen.
-   */
-  fun borrow(budgetId: Long, now: Long = System.currentTimeMillis()): BorrowOffer {
-    UsageTracker.prepare()
-    return store.transaction {
-      val budget = requireBudget(budgetId)
-      val fdow = store.firstDayOfWeek()
-      val apps = store.apps().filter { it.budgetId == budgetId }
-      val open = rollForward(budget, apps, now, fdow)
-      val current = current(budget, apps, open, now, fdow)
-      if (current.availableMs > 0L) {
-        throw BudgetException("ERR_TIME_LEFT", "Borrowing is only offered when time is used up")
-      }
-      val offer =
-        current.nextBorrow
-          ?: throw BudgetException("ERR_NO_BORROW_SLOT", "No borrowing slot is left under the cap")
-      store.insertBorrow(budgetId, open.id, offer.targetDay, offer.amountMs, now)
-      offer.copy(slotsLeft = offer.slotsLeft - 1)
-    }
-  }
-
-  /**
    * Sets the first day of the week. The current week keeps its end, so the
    * change applies from the next week.
    */
@@ -230,11 +210,13 @@ internal object Budgets {
         }
     while (open.endDay <= today) {
       val used = usage(apps, open.startDay, open.endDay)
-      val gained = store.gainedMs(listOf(open.id))[open.id] ?: 0L
-      val left = Ledger.availableMs(open.ownBudgetMs, open.bankedInMs, gained, used)
+      val left = Ledger.availableMs(open.ownBudgetMs, open.bankedInMs, used)
       val banked = Ledger.bankedAtResetMs(left, Ledger.bankCapMs(settings.budgetMinutes, settings.rolloverCeiling))
       val endsAt = Periods.dayStart(open.endDay)
       store.closePeriod(open.id, closedAt = endsAt, usedMs = used, bankedOutMs = banked)
+      // Time used past the period's own time is owed by the periods after it.
+      val borrowed = Ledger.borrowedMs(open.ownBudgetMs, open.bankedInMs, used)
+      if (borrowed > 0L) store.insertBorrow(budget.id, open.id, borrowed, endsAt)
       openPeriod(
         budget.id,
         settings,
@@ -277,28 +259,15 @@ internal object Budgets {
     settleBorrows: Boolean,
     now: Long,
   ): Long {
-    var borrowed = false
     var repaidMs = 0L
     if (settleBorrows) {
-      val outstanding = store.outstandingBorrows(budgetId)
-      // A borrowed period has a budget of 0. `<=` also catches a
-      // borrow whose period moved, e.g. after the first day of the week changed.
-      val taken =
-        outstanding
-          .filter { it.targetDay != null && it.targetDay <= startDay }
-          .minWithOrNull(compareBy<BorrowRow>({ it.targetDay }, { it.id }))
-      if (taken != null) {
-        borrowed = true
-        store.setBorrowRepaid(taken.id, taken.amountMs)
-      } else {
-        // Minutes owed come out of this period's budget, oldest first.
-        val owed = outstanding.filter { it.targetDay == null }
-        val paid = Ledger.repay(owed.map { it.outstandingMs }, settings.budgetMinutes * MINUTE_MS)
-        owed.zip(paid).forEach { (borrow, amount) ->
-          if (amount > 0L) store.setBorrowRepaid(borrow.id, borrow.repaidMs + amount)
-        }
-        repaidMs = paid.sum()
+      // Borrowed time comes out of this period's budget, oldest first.
+      val owed = store.outstandingBorrows(budgetId)
+      val paid = Ledger.repay(owed.map { it.outstandingMs }, settings.budgetMinutes * MINUTE_MS)
+      owed.zip(paid).forEach { (borrow, amount) ->
+        if (amount > 0L) store.setBorrowRepaid(borrow.id, borrow.repaidMs + amount)
       }
+      repaidMs = paid.sum()
     }
     return store.insertPeriod(
       budgetId,
@@ -306,7 +275,6 @@ internal object Budgets {
       startDay,
       endDay,
       settings.budgetMinutes,
-      borrowed,
       repaidMs,
       bankedInMs,
       now,
@@ -314,8 +282,8 @@ internal object Budgets {
   }
 
   // The switch applies now. The current period closes, and a new one of the
-  // new type opens, counting usage since its own start. Banked time and time
-  // already gained by borrowing carry over.
+  // new type opens, counting usage since its own start, so time borrowed in
+  // the closing period isn't owed twice. Banked time carries over.
   private fun switchPeriod(
     budget: BudgetRow,
     apps: List<BudgetAppRow>,
@@ -335,15 +303,14 @@ internal object Budgets {
           )
         BorrowedChoice.CLEAR -> store.clearBorrows(outstanding.map { it.id }, now)
         // Kept as a fixed number of minutes, not converted to the new period.
-        BorrowedChoice.KEEP -> store.keepBorrowsAsOwed(outstanding.filter { it.targetDay != null }.map { it.id })
+        BorrowedChoice.KEEP -> Unit
       }
     }
     val used = usedSince(budget, apps, open, now, fdow)
     val bankedLeft = Ledger.bankedLeftMs(open.ownBudgetMs, open.bankedInMs, used)
     val carried = minOf(bankedLeft, Ledger.bankCapMs(settings.budgetMinutes, settings.rolloverCeiling))
     store.closePeriod(open.id, closedAt = now, usedMs = used, bankedOutMs = carried)
-    val nextId = openCurrentPeriod(budget.id, settings, carried, now, fdow)
-    store.moveGained(open.id, nextId)
+    openCurrentPeriod(budget.id, settings, carried, now, fdow)
   }
 
   private fun current(
@@ -355,48 +322,30 @@ internal object Budgets {
   ): CurrentPeriod {
     val settings = budget.settings
     val used = usedSince(budget, apps, open, now, fdow)
-    val gained = store.gainedMs(listOf(open.id))[open.id] ?: 0L
     val ownBudgetMs = open.ownBudgetMs
-    val outstanding = store.outstandingBorrows(budget.id)
-    val borrowedPeriods = outstanding.count { it.targetDay != null }
-    val owedMs = outstanding.filter { it.targetDay == null }.sumOf { it.outstandingMs }
-    val slotsUsed = borrowedPeriods + Ledger.owedPeriods(owedMs, settings.budgetMinutes)
-    val nextBorrow =
-      if (settings.borrowCap > slotsUsed) {
-        BorrowOffer(
-          targetDay = nextUnborrowedDay(open, outstanding, settings.period, fdow),
-          amountMs = settings.budgetMinutes * MINUTE_MS,
-          slotsLeft = settings.borrowCap - slotsUsed,
-        )
-      } else {
-        null
+    val borrowed = Ledger.borrowedMs(ownBudgetMs, open.bankedInMs, used)
+    val owed = store.outstandingBorrows(budget.id).sumOf { it.outstandingMs }
+    // Owed time is paid back first, so it sits in the nearest periods.
+    val taken = owed + borrowed
+    val budgetMs = settings.budgetMinutes * MINUTE_MS
+    var startDay = open.endDay
+    val upcoming =
+      Ledger.upcomingTakenMs(taken, settings.budgetMinutes, settings.borrowCap, MAX_PERIOD_COUNT).map { takenMs ->
+        val period = UpcomingPeriod(startDay, budgetMs, takenMs)
+        startDay = Periods.dayKey(Periods.nextPeriodStart(settings.period, Periods.dayStart(startDay), fdow))
+        period
       }
     return CurrentPeriod(
       row = open,
       usedMs = used,
-      availableMs = Ledger.availableMs(ownBudgetMs, open.bankedInMs, gained, used),
+      ownBudgetMs = ownBudgetMs,
+      availableMs = Ledger.availableMs(ownBudgetMs, open.bankedInMs, used),
       bankedMs = Ledger.bankedLeftMs(ownBudgetMs, open.bankedInMs, used),
-      gainedMs = gained,
-      gainedLeftMs = Ledger.gainedLeftMs(ownBudgetMs, open.bankedInMs, gained, used),
-      borrowedPeriods = borrowedPeriods,
-      owedMs = owedMs,
-      nextBorrow = nextBorrow,
+      borrowedMs = borrowed,
+      owedMs = owed,
+      borrowLeftMs = (Ledger.borrowCapMs(settings.budgetMinutes, settings.borrowCap) - taken).coerceAtLeast(0L),
+      upcoming = upcoming,
     )
-  }
-
-  // The first upcoming period that isn't borrowed yet.
-  private fun nextUnborrowedDay(
-    open: PeriodRow,
-    outstanding: List<BorrowRow>,
-    period: BudgetPeriod,
-    fdow: Int,
-  ): String {
-    val borrowedDays = outstanding.mapNotNullTo(HashSet()) { it.targetDay }
-    var day = open.endDay
-    while (day in borrowedDays) {
-      day = Periods.dayKey(Periods.nextPeriodStart(period, Periods.dayStart(day), fdow))
-    }
-    return day
   }
 
   // Usage in the current period so far. If the clock moved back before the
@@ -413,11 +362,13 @@ internal object Budgets {
     return usage(apps, minOf(open.startDay, currentStart), null)
   }
 
-  // A budget counts the time of every app it limits.
+  // A budget counts the time of every app it limits, in whole minutes.
+  // Everything in the ledger is derived from this, so it's the one place
+  // usage is rounded.
   // TODO(total-budget): the total budget covers every non-exempt app, so the
   // tracker must measure all of them before total budgets can be created.
   private fun usage(apps: List<BudgetAppRow>, fromDay: String, toDay: String?): Long =
-    UsageTracker.usage(apps.map { it.packageName }, fromDay, toDay)
+    Ledger.countedMs(UsageTracker.usage(apps.map { it.packageName }, fromDay, toDay))
 
   private fun requireBudget(id: Long): BudgetRow =
     store.budget(id) ?: throw BudgetException("ERR_BUDGET_NOT_FOUND", "No budget with id $id")

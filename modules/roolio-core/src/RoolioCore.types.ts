@@ -2,7 +2,7 @@ export type BudgetPeriod = "day" | "week" | "month";
 
 export type BudgetKind = "app" | "group" | "total";
 
-/** What happens to borrowed periods when a budget changes period. */
+/** What happens to borrowed time still owed when a budget changes period. */
 export type BorrowedChoice = "clear" | "keep";
 
 /** The values of a budget the user chooses. */
@@ -22,13 +22,13 @@ export type BudgetApp = {
   iconVersion: number;
 };
 
-/** What the next borrow would take, e.g. "Borrow Tuesday's 60 min". */
-export type BorrowOffer = {
-  /** Local date the borrowed period starts, "YYYY-MM-DD". */
-  targetDay: string;
-  amountMs: number;
-  /** Borrowing slots left under the cap, counting this one. */
-  slotsLeft: number;
+/** An upcoming period whose budget can be borrowed from. */
+export type UpcomingPeriod = {
+  /** Local date the period starts, "YYYY-MM-DD". */
+  startDay: string;
+  budgetMs: number;
+  /** How much of its budget is already borrowed. */
+  takenMs: number;
 };
 
 type PeriodFields = {
@@ -37,35 +37,43 @@ type PeriodFields = {
   startDay: string;
   endDay: string;
   budgetMinutes: number;
-  /** The period was borrowed earlier, so its own budget is 0. */
-  borrowed: boolean;
-  /** Minutes owed after a period change, taken from this period's budget. */
+  /** Borrowed time from earlier periods, paid back from this period's budget. */
   repaidMs: number;
   /** Banked time carried in at the start. */
   bankedInMs: number;
 };
 
+/**
+ * Usage is counted in whole minutes, so every amount here is a whole number
+ * of minutes (in ms).
+ */
 export type CurrentPeriod = PeriodFields & {
   usedMs: number;
+  /** The period's budget less what it pays back of earlier borrowing. */
+  ownBudgetMs: number;
+  /** Time left before borrowing. */
   availableMs: number;
   /** Banked time not spent yet. */
   bankedMs: number;
-  /** Time gained by borrowing in this period, and how much is left. */
-  gainedMs: number;
-  gainedLeftMs: number;
-  /** Upcoming periods already borrowed. */
-  borrowedPeriods: number;
-  /** Minutes still owed after a period change. */
+  /** Time used past this period's own budget and banked time. */
+  borrowedMs: number;
+  /** Borrowed in earlier periods and not paid back yet. */
   owedMs: number;
-  /** Null when the borrow cap is reached or borrowing is off. */
-  nextBorrow: BorrowOffer | null;
+  /** Time that can still be borrowed under the cap. */
+  borrowLeftMs: number;
+  /**
+   * The periods borrowed time comes out of, nearest first: one per borrow
+   * cap, or more while owed time reaches further.
+   */
+  upcoming: UpcomingPeriod[];
 };
 
 export type PastPeriod = PeriodFields & {
   usedMs: number;
   /** Banked time carried out to the next period. */
   bankedOutMs: number;
-  gainedMs: number;
+  /** Time used past the period's own time, owed by later periods. */
+  borrowedMs: number;
   closedAt: number;
 };
 

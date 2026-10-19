@@ -20,8 +20,14 @@ import {
   defaultSettings,
   settingsEqual,
 } from "../../budgets/rules";
-import { formatPeriods, periodLabel, periodNoun } from "../../budgets/format";
+import {
+  formatDuration,
+  formatPeriods,
+  periodLabel,
+  periodNoun,
+} from "../../budgets/format";
 import type {
+  BorrowedChoice,
   BudgetPeriod,
   BudgetSettings,
   BudgetWithUsage,
@@ -177,13 +183,15 @@ function BudgetForm({ app, budget }: BudgetFormProps) {
       ),
     }));
 
-  const persist = async () => {
+  // `borrowedChoice` is needed when switching period with borrowed time
+  // still owed.
+  const persist = async (borrowedChoice: BorrowedChoice | null = null) => {
     if (savingRef.current) return;
     savingRef.current = true;
     setSaving(true);
     try {
       if (isEditing) {
-        await updateBudget(budget.id, form);
+        await updateBudget(budget.id, form, borrowedChoice);
       } else {
         await createBudget(app, form);
       }
@@ -206,21 +214,28 @@ function BudgetForm({ app, budget }: BudgetFormProps) {
   };
 
   const newPeriod = periodLabel(form.period).toLowerCase();
+  const newNoun = periodNoun(form.period);
+  const owedMinutes = budget?.owedMinutes ?? 0;
   const dialogContent =
     dialog === "switch-period"
-      ? {
-          /* TODO(borrowing): When the app has borrowed periods, this dialog must
-           * offer "Clear the borrowed" (future periods return to
-           * full budget) and "Keep the borrowed" (owed minutes are deducted
-           * from the new period's budgets). Add both actions once borrowing
-           * is built. */
-          title: `Switch to ${newPeriod}?`,
-          message: `Your budget will reset ${newPeriod} from now on. Time you've already used counts toward the new ${periodNoun(form.period)}.`,
-          actions: [
-            { label: "Cancel" },
-            { label: "Switch now", onPress: () => void persist() },
-          ],
-        }
+      ? owedMinutes > 0
+        ? {
+            title: `Switch to ${newPeriod}?`,
+            message: `Your budget will reset ${newPeriod} from now on. Time you've already used counts toward the new ${newNoun}.\n\nYou still owe ${formatDuration(owedMinutes)} of borrowed time. Clear it, or keep it and take it out of your next ${newNoun}s?`,
+            actions: [
+              { label: "Cancel" },
+              { label: "Clear it", onPress: () => void persist("clear") },
+              { label: "Keep it", onPress: () => void persist("keep") },
+            ],
+          }
+        : {
+            title: `Switch to ${newPeriod}?`,
+            message: `Your budget will reset ${newPeriod} from now on. Time you've already used counts toward the new ${newNoun}.`,
+            actions: [
+              { label: "Cancel" },
+              { label: "Switch now", onPress: () => void persist() },
+            ],
+          }
       : {
           title: "Couldn't save budget",
           message: "Your changes weren't saved. Please try again.",
