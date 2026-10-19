@@ -52,13 +52,7 @@ export function UsageSummary({ budget }: { budget: BudgetWithUsage }) {
           {headline}
         </Text>
       </View>
-      <UsageBar
-        usedMinutes={budget.usedMinutes}
-        repaidMinutes={budget.repaidMinutes}
-        budgetMinutes={budget.ownBudgetMinutes}
-        bankedMinutes={budget.bankedInMinutes}
-        state={state}
-      />
+      <UsageBar budget={budget} />
       <Text style={[styles.usage, { color: colors.onSurfaceVariant }]}>
         {usage}
       </Text>

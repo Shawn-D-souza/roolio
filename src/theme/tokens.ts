@@ -14,6 +14,7 @@ export type AppColors = {
   onPrimary: string;
   primaryContainer: string;
   onPrimaryContainer: string;
+  banked: string;
   borrowed: string;
   borrowedContainer: string;
   onBorrowedContainer: string;
@@ -91,6 +92,9 @@ export const colors: Record<ColorScheme, AppColors> = {
     onPrimary: "#FFFFFF",
     primaryContainer: "#E3DFFF",
     onPrimaryContainer: "#14006B",
+    // Banked time in usage bars and legends (4.3:1 on surfaceContainer).
+    // Green so it can't be mistaken for the indigo budget or rust borrowed.
+    banked: "#2E7D5B",
     borrowed: "#A8452D",
     borrowedContainer: "#FFDAD1",
     onBorrowedContainer: "#3A0B00",
@@ -119,6 +123,7 @@ export const colors: Record<ColorScheme, AppColors> = {
     onPrimary: "#26148A",
     primaryContainer: "#3D3AA0",
     onPrimaryContainer: "#E3DFFF",
+    banked: "#7DD8AE",
     borrowed: "#FFB4A0",
     borrowedContainer: "#5C1F0F",
     onBorrowedContainer: "#FFDAD1",
