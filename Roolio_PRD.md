@@ -123,10 +123,7 @@ Time is spent in this order: the period's own budget first, then banked time, th
 
 These are chosen **per app**, on the app selection screen when the app is added (and can be edited later, see section 7). They are counted in periods of that app's budget: 3 on a daily budget means 3 days, on a weekly budget 3 weeks, on a monthly budget 3 months.
 
-|                  | Free          | Premium                              |
-| ---------------- | ------------- | ------------------------------------ |
-| Rollover ceiling | 0, 1, 3, or 7 | Custom: any whole number from 0 to 7 |
-| Borrow cap       | 0, 1, 3, or 7 | Custom: any whole number from 0 to 7 |
+- Both can be any whole number from 0 to 7, for free and premium users alike.
 
 - **Default for every app is 1 for both.** New budgets bank up to one period of unused time and can borrow one period ahead. The user can set either to 0 to turn it off.
 - 0 rollover means unused time is lost at reset. 0 borrow cap means the app is blocked as soon as available time is zero, and the pause screen only offers "Close app".
@@ -242,8 +239,7 @@ Premium unlocks:
 2. **Weekly and monthly budgets:** section 4.
 3. **Total phone budget:** one budget across all non-exempt apps, with its own period (daily, weekly, or monthly), banked time, borrowed time, ceiling, and cap, following the same rules. Time in any app counts against both its own budget and the total. If either budget reaches zero, the app is blocked. If both are at zero, the pause screen offers borrowing for each exhausted budget separately, and the app is stopped at whichever stopping point comes first.
 4. **App groups:** a group (e.g., "Social") shares one budget with its own period, banked time, borrowed time, ceiling, and cap. An app can be in at most one group, and an app in a group does not also have its own individual budget.
-5. **Custom ceiling and cap:** section 6.7.
-6. **Stats and history:** for each budget, the complete history since the budget was created, shown per period (days, weeks, or months, matching the budget's period) as usage against budget, plus banked and borrowed totals. History is never deleted automatically and is stored on the device only. It is lost only if the app or Roolio is uninstalled (no backup in v1).
+5. **Stats and history:** for each budget, the complete history since the budget was created, shown per period (days, weeks, or months, matching the budget's period) as usage against budget, plus banked and borrowed totals. History is never deleted automatically and is stored on the device only. It is lost only if the app or Roolio is uninstalled (no backup in v1).
 
 ## 9. Edge cases
 
@@ -254,7 +250,6 @@ Premium unlocks:
   - Only 3 apps stay enforced: the 3 daily-budget apps added earliest. Other apps keep their settings but are not enforced until the user upgrades.
   - Apps with weekly or monthly budgets are not enforced. They keep their settings.
   - The total budget and groups stop being enforced at the next reset and are kept but locked.
-  - Ceiling and cap values that are not free values (0, 1, 3, 7) change to the nearest lower free value at the next reset.
   - Stats are locked but kept.
 - **App uninstalled:** Its budget and history are removed.
 - **App reinstalled or Roolio uninstalled:** Data is lost (no backup in v1). Settings explains this.
@@ -300,7 +295,7 @@ Revisit after launch, based on user feedback and reliability data (reviews, unin
 | -------------------------------- | ------------------- | ---------------------- |
 | Apps with budgets                | Up to 3             | Unlimited              |
 | Budget periods                   | Daily               | Daily, weekly, monthly |
-| Rollover and borrowing (per app) | 0, 1, 3, or 7       | Custom 0 to 7          |
+| Rollover and borrowing (per app) | 0 to 7              | 0 to 7                 |
 | Pause screen and notifications   | Yes                 | Yes                    |
 | Total phone budget               | No                  | Yes                    |
 | App groups                       | No                  | Yes                    |
@@ -325,4 +320,4 @@ Revisit after launch, based on user feedback and reliability data (reviews, unin
 5. As a user, I want to choose per app whether time rolls over and whether I can borrow, with sensible defaults (one period each) that I can change or turn off.
 6. As a user, I want to see my banked time and borrowed time for each app at a glance so I always know where I stand.
 7. As a user, I want my data to stay on my phone so I can trust the app.
-8. As a premium user, I want weekly and monthly budgets, unlimited apps, a total budget, groups, and custom settings so I can tailor Roolio to my habits.
+8. As a premium user, I want weekly and monthly budgets, unlimited apps, a total budget, groups, and full history so I can tailor Roolio to my habits.
