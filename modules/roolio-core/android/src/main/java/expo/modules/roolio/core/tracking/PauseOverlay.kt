@@ -11,6 +11,9 @@ import android.graphics.Canvas
 import android.graphics.PixelFormat
 import android.graphics.drawable.AdaptiveIconDrawable
 import android.graphics.drawable.Drawable
+import android.media.AudioAttributes
+import android.media.AudioFocusRequest
+import android.media.AudioManager
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
@@ -93,14 +96,20 @@ internal class PauseOverlay(
    * stops (video and sound too) and its time stops counting. The window
    * goes up first: a visible window lets Roolio start the home screen from
    * the background.
+   *
+   * An app that isn't `inFront` (a small window, picture-in-picture) floats
+   * over the home screen, and Android gives other apps no way to close it.
+   * Its media is paused instead, and the card covers it.
    */
-  fun show(status: PauseStatus) {
+  fun show(status: PauseStatus, inFront: Boolean) {
     handler.post {
       if (root != null) {
         bindNow(status)
         return@post
       }
-      if (addNow(status, animate = true)) startHome()
+      if (!addNow(status, animate = true)) return@post
+      if (!inFront) pauseMedia()
+      startHome()
     }
   }
 
@@ -311,11 +320,43 @@ internal class PauseOverlay(
       }
   }
 
+  /**
+   * Pauses whatever is playing. The pause key goes to the app playing media,
+   * as a headset's button would. Players without a media session stop when
+   * another app takes audio focus for good, and they aren't given it back.
+   * Roolio plays nothing, so it lets go of focus straight away.
+   */
+  private fun pauseMedia() {
+    val audio = context.getSystemService(Context.AUDIO_SERVICE) as? AudioManager ?: return
+    for (action in intArrayOf(KeyEvent.ACTION_DOWN, KeyEvent.ACTION_UP)) {
+      audio.dispatchMediaKeyEvent(KeyEvent(action, KeyEvent.KEYCODE_MEDIA_PAUSE))
+    }
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+      val attributes =
+        AudioAttributes.Builder()
+          .setUsage(AudioAttributes.USAGE_MEDIA)
+          .setContentType(AudioAttributes.CONTENT_TYPE_MOVIE)
+          .build()
+      val request = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN).setAudioAttributes(attributes).build()
+      audio.requestAudioFocus(request)
+      audio.abandonAudioFocusRequest(request)
+    } else {
+      val listener = AudioManager.OnAudioFocusChangeListener {}
+      @Suppress("DEPRECATION")
+      audio.requestAudioFocus(listener, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN)
+      @Suppress("DEPRECATION")
+      audio.abandonAudioFocus(listener)
+    }
+  }
+
+  // Not a trip home by the user: an app leaving the front then doesn't get
+  // the "user is leaving" signal, which is what puts a video app into
+  // picture-in-picture (both its own and Android's automatic one).
   private fun startHome() {
     val home =
       Intent(Intent.ACTION_MAIN)
         .addCategory(Intent.CATEGORY_HOME)
-        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_NO_USER_ACTION)
     homeStartedAt = SystemClock.uptimeMillis()
     try {
       context.startActivity(home)

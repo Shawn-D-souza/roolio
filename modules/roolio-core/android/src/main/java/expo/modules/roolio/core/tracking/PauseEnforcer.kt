@@ -9,22 +9,30 @@ import expo.modules.roolio.core.budgets.KeepGoing
 import expo.modules.roolio.core.budgets.PauseStatus
 
 private const val TAG = "RoolioCore"
-// The longest a budget goes unchecked while its app is in front, or while the
+// The longest a budget goes unchecked while its app is on screen, or while the
 // pause screen is up. Catches late-logged usage, resets and edits.
 private const val RECHECK_MS = 15_000L
 // How long the paused app may stay in front after being sent home before
 // trying again (a blocked start, or a slow launcher).
 private const val HOME_RETRY_MS = 2_000L
+// A paused app can stay on screen without being in front: a small window or
+// picture-in-picture, which Android gives other apps no way to close. After
+// the pause screen is dismissed, the user has this long to close it
+// themselves before the pause screen comes back.
+private const val ON_SCREEN_RETRY_MS = 5_000L
 
 /**
  * Pauses apps at their stopping points: sends the user home and
  * shows the pause screen ([PauseOverlay]) until they choose or dismiss it.
  *
- * Cheap per tick: with no budgeted app in front it's one set lookup. When one
- * comes to the front, its budget is read once and the time to its next stop
- * is kept. A single app's usage grows no faster than time, so the stop can't
- * come sooner, and the budget is read again only then, every RECHECK_MS, when
- * the app in front changes, or after an edit.
+ * Every budgeted app on screen is checked, not only the one in front: an app
+ * in picture-in-picture or the other half of split screen spends its time too.
+ *
+ * Cheap per tick: with no budgeted app on screen it's a few set lookups. When
+ * one appears, its budget is read once and the time to its next stop is kept.
+ * A single app's usage grows no faster than time, so the stop can't come
+ * sooner, and the budget is read again only then, every RECHECK_MS, when the
+ * app comes to the front, or after an edit.
  *
  * All state lives on the tracker thread (see [UsageTracker.post]).
  */
@@ -34,15 +42,20 @@ internal object PauseEnforcer {
   /** The pause screen while [TrackingService] runs; null otherwise. */
   @Volatile var overlay: PauseOverlay? = null
 
-  // The budgeted app last checked in front, and when to check it again
-  // (elapsedRealtime).
-  private var checked: String? = null
-  private var nextCheckAt = 0L
+  // When to check each budgeted app on screen again (elapsedRealtime). An app
+  // that leaves the screen is dropped, so it's checked as soon as it's back.
+  private val nextCheckAt = HashMap<String, Long>()
+  // The app in front as of the last tick.
+  private var front: String? = null
   // A budget changed: check again on the next tick.
   private var invalidated = false
+  // Reused for each tick's apps to check, since checking can change the
+  // tracker's set of apps on screen.
+  private val candidates = ArrayList<String>(4)
 
-  // What the pause screen is up for.
+  // What the pause screen is up for, and when to read its budget again.
   private var paused: PauseStatus? = null
+  private var refreshAt = 0L
   private var homeSentAt = 0L
 
   private var overlayOffNotified = false
@@ -58,8 +71,14 @@ internal object PauseEnforcer {
   }
 
   /** Called on every tick, after usage is up to date. */
-  fun onTick(foreground: String?, tracked: Set<String>) {
+  fun onTick(foreground: String?, visible: Set<String>, tracked: Set<String>) {
     val elapsed = SystemClock.elapsedRealtime()
+    // An app that comes to the front is checked at once.
+    if (foreground != front) {
+      front = foreground
+      foreground?.let(nextCheckAt::remove)
+    }
+
     paused?.let { shown ->
       // The home screen it sent the user to, and the notification shade, keep
       // the pause screen up. (Pressing Home or Recents closes it: see
@@ -73,34 +92,56 @@ internal object PauseEnforcer {
           homeSentAt = elapsed
           overlay?.goHome()
         }
-        if (invalidated || elapsed >= nextCheckAt) refresh(shown, elapsed, force = false)
+        if (invalidated || elapsed >= refreshAt) refresh(shown, elapsed, force = false)
         return
       }
       // Another app came to the front (a call, a notification, Roolio): that
       // closes the pause screen, so it never covers them.
       dismiss()
+      holdOff(shown.packageName, inFront = false, visible, elapsed)
     }
 
-    if (foreground == null || foreground !in tracked || SystemApps.isExempt(appContext, foreground)) {
-      checked = null
+    // A call, Settings or Roolio itself is never interrupted, not even for an
+    // app in picture-in-picture over it.
+    if (
+      foreground != null &&
+        SystemApps.isExempt(appContext, foreground) &&
+        !SystemApps.keepsPause(appContext, foreground)
+    ) {
+      nextCheckAt.clear()
       return
     }
-    if (foreground == checked && !invalidated && elapsed < nextCheckAt) return
-    check(foreground, elapsed)
+
+    nextCheckAt.keys.retainAll(visible)
+    val due = invalidated
+    invalidated = false
+    // The app in front first: going home is what closes it.
+    candidates.clear()
+    if (foreground != null && foreground in visible) candidates += foreground
+    for (packageName in visible) if (packageName != foreground) candidates += packageName
+    for (packageName in candidates) {
+      if (packageName !in tracked || SystemApps.isExempt(appContext, packageName)) continue
+      if (!due && elapsed < (nextCheckAt[packageName] ?: 0L)) continue
+      check(packageName, inFront = packageName == foreground, elapsed)
+      if (paused != null) break
+    }
+    candidates.clear()
   }
 
   /** Takes the pause screen down without a choice: the screen turned off, or tracking stopped. */
   fun reset() {
     dismiss()
-    nextCheckAt = 0L
+    nextCheckAt.clear()
+    front = null
   }
 
   /** "Close app". */
   fun onClose() {
     val shown = paused ?: return
     paused = null
-    checked = null
-    overlay?.close(goHome = UsageTracker.foregroundPackage == shown.packageName)
+    val inFront = UsageTracker.foregroundPackage == shown.packageName
+    holdOff(shown.packageName, inFront, UsageTracker.visiblePackages, SystemClock.elapsedRealtime())
+    overlay?.close(goHome = inFront)
   }
 
   /** "5 more minutes" or "Use Tuesday's time": saved, then the app opens again. */
@@ -108,7 +149,7 @@ internal object PauseEnforcer {
     val shown = paused ?: return
     if (Budgets.keepGoing(shown.budgetId, shown.periodId, keepGoing.untilMs)) {
       paused = null
-      checked = null
+      nextCheckAt.remove(shown.packageName)
       overlay?.resume(shown.packageName)
     } else {
       // The period ended, or the budget changed: show what's possible now.
@@ -117,8 +158,8 @@ internal object PauseEnforcer {
   }
 
   /**
-   * The pause screen couldn't be shown. `checked` is kept, so the app is tried
-   * again at `nextCheckAt` rather than on every tick.
+   * The pause screen couldn't be shown. The app's next check is kept, so it's
+   * tried again then rather than on every tick.
    */
   fun onShowFailed() {
     if (paused == null) return
@@ -143,15 +184,13 @@ internal object PauseEnforcer {
     notifyOverlayOff()
   }
 
-  private fun check(packageName: String, elapsed: Long) {
-    invalidated = false
-    checked = packageName
+  private fun check(packageName: String, inFront: Boolean, elapsed: Long) {
     val status = Budgets.pauseStatus(packageName)
     if (status == null || !status.plan.paused) {
-      nextCheckAt = elapsed + minOf(status?.plan?.remainingMs ?: RECHECK_MS, RECHECK_MS)
+      nextCheckAt[packageName] = elapsed + minOf(status?.plan?.remainingMs ?: RECHECK_MS, RECHECK_MS)
       return
     }
-    nextCheckAt = elapsed + RECHECK_MS
+    nextCheckAt[packageName] = elapsed + RECHECK_MS
     val overlay = overlay
     if (overlay == null || !Settings.canDrawOverlays(appContext)) {
       notifyOverlayOff()
@@ -159,13 +198,14 @@ internal object PauseEnforcer {
     }
     Log.i(TAG, "Pausing $packageName (${status.plan.reason})")
     paused = status
+    refreshAt = elapsed + RECHECK_MS
     homeSentAt = elapsed
-    overlay.show(status)
+    overlay.show(status, inFront)
   }
 
   private fun refresh(shown: PauseStatus, elapsed: Long, force: Boolean) {
     invalidated = false
-    nextCheckAt = elapsed + RECHECK_MS
+    refreshAt = elapsed + RECHECK_MS
     val status = Budgets.pauseStatus(shown.packageName)
     if (status == null || !status.plan.paused) {
       // A reset or an edit gave the app time again.
@@ -178,9 +218,21 @@ internal object PauseEnforcer {
   }
 
   private fun dismiss() {
+    paused?.let { nextCheckAt.remove(it.packageName) }
     paused = null
-    checked = null
     overlay?.hide()
+  }
+
+  // After the pause screen goes without a choice, a paused app still on screen
+  // but not in front (a small window or picture-in-picture) is paused again
+  // after ON_SCREEN_RETRY_MS, unless the user closes it first. One in front
+  // is checked again at once.
+  private fun holdOff(packageName: String, inFront: Boolean, visible: Set<String>, elapsed: Long) {
+    if (!inFront && packageName in visible) {
+      nextCheckAt[packageName] = elapsed + ON_SCREEN_RETRY_MS
+    } else {
+      nextCheckAt.remove(packageName)
+    }
   }
 
   private fun notifyOverlayOff() {

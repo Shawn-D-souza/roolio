@@ -102,6 +102,13 @@ internal object UsageTracker {
   @Volatile var foregroundPackage: String? = null
     private set
 
+  /**
+   * Every app on screen as of the last tick, including ones not in front
+   * (picture-in-picture, split screen). Tracker thread only (see [post]).
+   */
+  val visiblePackages: Set<String>
+    get() = tail.packages
+
   @Synchronized
   fun init(context: Context) {
     if (!::appContext.isInitialized) appContext = context.applicationContext
@@ -204,7 +211,7 @@ internal object UsageTracker {
           }
           catchUp()
           if (sessionEnded || elapsed - lastFlushAt >= FLUSH_MS) flush(force = false)
-          PauseEnforcer.onTick(foregroundPackage, config.packages)
+          PauseEnforcer.onTick(foregroundPackage, tail.packages, config.packages)
         }
         if (ticking) handler.postDelayed(this, TICK_MS)
       }

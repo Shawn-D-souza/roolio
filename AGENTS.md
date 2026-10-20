@@ -37,6 +37,7 @@ Kotlin owns all data and enforcement, and React Native is the UI. Read this map 
 
 - Nothing runs at midnight. Every read and write first rolls budgets forward: it closes ended periods, banks leftover time and repays borrowed time. Periods are keyed by local date, so each period start gets exactly one reset.
 - Enforcement doesn't need JS. `TrackingService` (started by `syncTracking()` or at boot) runs `UsageTracker` and `PauseEnforcer`.
+- `PauseEnforcer` checks every budgeted app on screen, not only the one in front, because picture-in-picture and split-screen time counts too. An app that isn't in front (a small window, picture-in-picture) can't be closed without Accessibility, so the pause screen pauses its media (a media pause key, plus audio focus) and comes back 5 s after each dismissal while the window stays open.
 - All budget and usage state lives on one thread. Native code reaches it through `UsageTracker.post`, never from another thread.
 - Native amounts are ms, always whole minutes, because usage is counted in whole minutes. `repository.ts` converts them to minutes for the UI. Budget settings are in minutes everywhere.
 

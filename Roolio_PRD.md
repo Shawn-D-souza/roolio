@@ -215,6 +215,7 @@ At each stopping point, Roolio closes the app (the user is returned to the home 
 - Back, or a tap outside the card, does the same as "Close app". Going Home or to Recents closes it too.
 - Dismissing never lets the user back into the app: the app is already closed, and reopening it shows the pause screen again at the same stopping point.
 - If another app comes to the front (for example an incoming call or a tapped notification), the pause screen closes, so it never covers it.
+- **Small windows:** an app can also be on screen without filling it: in a small floating window, in picture-in-picture, or in split screen. Its time counts, and it is paused like any other app. Going home closes a split-screen app, but a small window or picture-in-picture window floats over the home screen, and Roolio cannot close it (see section 10.1). Instead, Roolio pauses its video or audio, and the pause screen covers it. After the pause screen is dismissed, the user has 5 seconds to close the window themselves; while it stays open, the pause screen comes back.
 - It closes when the screen turns off.
 
 ### 8.5 Notifications
@@ -275,8 +276,9 @@ Known trade-offs of Usage Access alone:
 
 - The pause screen can appear up to about a second after an app opens, because Roolio checks the foreground app on a short interval instead of being told instantly.
 - On phones that aggressively stop background apps (for example Xiaomi, Oppo/Realme, Vivo, Huawei), Roolio's background service may be stopped unless the user exempts it from battery restrictions.
+- Roolio cannot close an app that is in a small floating window or in picture-in-picture (section 8.4). Android gives regular apps no way to close or move another app's window. Roolio can only pause the window's media and keep showing the pause screen until the user closes the window. An Accessibility service can see these windows and act on them, so it may let Roolio close them directly. That needs testing on real phones, since each manufacturer draws these windows differently.
 
-Revisit after launch, based on user feedback and reliability data (reviews, uninstall reasons, reports that the pause screen was late or did not appear). If Accessibility is added:
+Revisit after launch, based on user feedback and reliability data (reviews, uninstall reasons, reports that the pause screen was late or did not appear, or that small windows kept running). If Accessibility is added:
 
 - It is offered during onboarding as the **recommended** option, with Usage Access as the fallback for users who decline it. A user who declines must still get a working app.
 - It needs Google Play's Accessibility declaration, a prominent in-app disclosure, and an update to section 10 and goal 4.
