@@ -19,6 +19,13 @@ private const val ALERTS_CHANNEL_ID = "permission_alerts"
 private const val TIME_CHANNEL_ID = "time_alerts"
 // Time-left alerts are tagged and keyed by budget id, one per budget.
 private const val TIME_LEFT_TAG = "time_left"
+// Every notification has a group of its own kind. Android bundles an app's
+// ungrouped notifications together, and a bundle ranks as its loudest
+// member, which would pull the silent tracking notification up next to a
+// time-left alert.
+private const val TRACKING_GROUP = "expo.modules.roolio.core.TRACKING"
+private const val TIME_LEFT_GROUP = "expo.modules.roolio.core.TIME_LEFT"
+private const val PERMISSION_GROUP = "expo.modules.roolio.core.PERMISSIONS"
 private const val ACCESS_LOST_ID = 1002
 private const val OVERLAY_OFF_ID = 1003
 
@@ -38,6 +45,7 @@ internal object Notifications {
       .setContentText(context.getString(R.string.roolio_tracking_text))
       .setContentIntent(openRoolio(context))
       .setCategory(NotificationCompat.CATEGORY_SERVICE)
+      .setGroup(TRACKING_GROUP)
       .setPriority(NotificationCompat.PRIORITY_MIN)
       .setVisibility(NotificationCompat.VISIBILITY_SECRET)
       .setOngoing(true)
@@ -111,6 +119,7 @@ internal object Notifications {
         .setStyle(NotificationCompat.BigTextStyle().bigText(text))
         .setContentIntent(openRoolio(context))
         .setCategory(NotificationCompat.CATEGORY_REMINDER)
+        .setGroup(TIME_LEFT_GROUP)
         .setPriority(NotificationCompat.PRIORITY_HIGH)
         .setAutoCancel(true)
         .setLocalOnly(true)
@@ -140,6 +149,7 @@ internal object Notifications {
         .setStyle(NotificationCompat.BigTextStyle().bigText(text))
         .setContentIntent(openRoolio(context))
         .setCategory(NotificationCompat.CATEGORY_STATUS)
+        .setGroup(PERMISSION_GROUP)
         .setPriority(NotificationCompat.PRIORITY_DEFAULT)
         .setAutoCancel(true)
         .setOnlyAlertOnce(true)
