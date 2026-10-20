@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The pause screen's sizes, from the app's spacing and radius tokens. -->
+<resources>
+    <dimen name="roolio_pause_gutter">24dp</dimen>
+    <dimen name="roolio_pause_max_width">440dp</dimen>
+    <dimen name="roolio_pause_card_margin">16dp</dimen>
+    <dimen name="roolio_pause_card_padding">20dp</dimen>
+    <dimen name="roolio_pause_card_radius">28dp</dimen>
+    <!-- How far the card rises as it fades in. -->
+    <dimen name="roolio_pause_card_rise">24dp</dimen>
+    <dimen name="roolio_pause_icon_size">40dp</dimen>
+    <dimen name="roolio_pause_brand_icon_size">18dp</dimen>
+    <dimen name="roolio_pause_button_height">48dp</dimen>
+    <!-- Half the button height: a pill. -->
+    <dimen name="roolio_pause_button_radius">24dp</dimen>
+</resources>

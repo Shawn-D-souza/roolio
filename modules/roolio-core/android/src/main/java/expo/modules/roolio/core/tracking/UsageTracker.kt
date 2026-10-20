@@ -125,6 +125,8 @@ internal object UsageTracker {
   fun stopTicking() = post {
     ticking = false
     handler.removeCallbacks(tick)
+    // Nothing is paused with the screen off; the keyguard comes first.
+    PauseEnforcer.reset()
     if (!loaded) return@post
     guard {
       catchUp()
@@ -198,9 +200,11 @@ internal object UsageTracker {
               onAccessLost?.invoke()
               return@guard
             }
+            PauseEnforcer.checkOverlayAccess()
           }
           catchUp()
           if (sessionEnded || elapsed - lastFlushAt >= FLUSH_MS) flush(force = false)
+          PauseEnforcer.onTick(foregroundPackage, config.packages)
         }
         if (ticking) handler.postDelayed(this, TICK_MS)
       }

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The pause screen's colors: the light tokens of src/theme/tokens.ts. Keep in step with it. -->
+<resources>
+    <color name="roolio_pause_surface">#FBF9FF</color>
+    <!-- Decorative card edge, so the card reads on any wallpaper. -->
+    <color name="roolio_pause_outline_variant">#C8C5D0</color>
+    <!-- The dim over the home screen behind the card. -->
+    <color name="roolio_pause_scrim">#66000000</color>
+    <!-- The fill of the quieter "5 more minutes" button. -->
+    <color name="roolio_pause_surface_container_highest">#E3DFEE</color>
+    <color name="roolio_pause_on_surface">#1B1B21</color>
+    <color name="roolio_pause_on_surface_variant">#47464F</color>
+    <color name="roolio_pause_primary">#4F46B8</color>
+    <color name="roolio_pause_on_primary">#FFFFFF</color>
+    <!-- Press feedback: onSurface and onPrimary at 12%. -->
+    <color name="roolio_pause_ripple">#1F1B1B21</color>
+    <color name="roolio_pause_ripple_on_primary">#1FFFFFFF</color>
+</resources>

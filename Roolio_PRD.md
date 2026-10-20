@@ -69,7 +69,7 @@ Every budget uses exactly one **period**. An app picks one: daily, weekly, or mo
 | **Rollover ceiling** | The maximum banked time, expressed in periods of that budget.                                                    |
 | **Borrow cap**       | How many upcoming periods can be borrowed from.                                                                  |
 | **Available time**   | The minutes the user can still spend in the current period in a budget, before borrowing.                        |
-| **Pause screen**     | The full-screen Roolio screen shown over an app when its time runs out (section 8.4).                            |
+| **Pause screen**     | The Roolio card shown over the home screen when an app's time runs out and Roolio closes it (section 8.4).       |
 | **Exempt apps**      | Apps that can never be limited: Phone/dialer, emergency services, system Settings, and Roolio itself.            |
 
 ## 6. Budget rules (core logic)
@@ -197,7 +197,7 @@ Details:
 
 ### 8.4 Pause screen
 
-Shown full-screen over an app at each stopping point, both when the user opens the app and when a stopping point is reached during use. It only decides when the app is stopped; it never changes budgets, banked time or borrowed time.
+At each stopping point, Roolio closes the app (the user is returned to the home screen) and shows the pause screen: a card over the dimmed home screen. This happens both when the user opens the app and when a stopping point is reached during use. It only decides when the app is stopped; it never changes budgets, banked time or borrowed time.
 
 **Stopping points:**
 
@@ -207,12 +207,18 @@ Shown full-screen over an app at each stopping point, both when the user opens t
 
 **Choices:**
 
-- **Close app:** returns the user to the home screen.
-- **5 more minutes:** keeps the app open for 5 minutes, borrowed from the next period. When they end, the app closes, and the pause screen appears again.
-- **Use [next period]'s time:** keeps the app open until that period's remaining budget is used, for example "Use Tuesday's 50 min", "Use next week's 10 hours". The screen shows how many periods are left to borrow from (e.g., "2 of 3 left").
-- The borrowing choices are shown only while borrowing is possible. When the cap is reached (or borrowing is off), only "Close app" is shown, with a note about when the budget resets.
+- **Close app:** closes the pause screen. The user is already on the home screen.
+- **5 more minutes:** reopens the app where the user left it, for 5 minutes borrowed from the upcoming periods (fewer when less than 5 minutes can still be borrowed). When they end, the app closes, and the pause screen appears again.
+- **Use [next period]'s time:** reopens the app until that period's remaining budget is used, for example "Use Tuesday's 50 min", "Use next week's 10 hours". The screen shows how many periods are left to borrow from (e.g., "2 of 3 left").
+- The borrowing choices are shown only while borrowing is possible. When the cap is reached (or borrowing is off), only "Close app" is shown, with a note about when the app has time again.
 - Reopening the app after a choice continues to the same stopping point; the pause screen is not shown again before it.
-- The pause screen cannot be dismissed in any way that lets the user stay in the app without choosing.
+
+**Dismissing:**
+
+- Back, or a tap outside the card, does the same as "Close app". Going Home or to Recents closes it too.
+- Dismissing never lets the user back into the app: the app is already closed, and reopening it shows the pause screen again at the same stopping point.
+- If another app comes to the front (for example an incoming call or a tapped notification), the pause screen closes, so it never covers it.
+- It closes when the screen turns off.
 
 ### 8.5 Notifications
 

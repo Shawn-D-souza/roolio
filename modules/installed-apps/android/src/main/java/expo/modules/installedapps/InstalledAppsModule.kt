@@ -132,6 +132,10 @@ class InstalledAppsModule : Module() {
 
     exempt += queryActivities(packageManager, Intent(Intent.ACTION_DIAL)).packageNames()
     exempt += queryActivities(packageManager, Intent(Settings.ACTION_SETTINGS)).packageNames()
+    // A launcher can't be paused: the pause screen sends the user to it.
+    exempt +=
+      queryActivities(packageManager, Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME))
+        .packageNames()
 
     return exempt
   }

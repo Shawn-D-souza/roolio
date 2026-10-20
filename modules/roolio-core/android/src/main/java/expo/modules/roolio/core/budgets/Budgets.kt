@@ -2,6 +2,7 @@ package expo.modules.roolio.core.budgets
 
 import android.content.Context
 import expo.modules.roolio.core.db.RoolioDatabase
+import expo.modules.roolio.core.tracking.PauseEnforcer
 import expo.modules.roolio.core.tracking.TrackerConfig
 import expo.modules.roolio.core.tracking.TrackingService
 import expo.modules.roolio.core.tracking.UsageTracker
@@ -59,6 +60,25 @@ internal data class BudgetStatus(
 
 internal data class PastPeriod(val row: PeriodRow, val borrowedMs: Long)
 
+/** Where an app stands against the stopping points of the pause screen. */
+internal data class PauseStatus(
+  val budgetId: Long,
+  val periodId: Long,
+  val packageName: String,
+  val appName: String,
+  val period: BudgetPeriod,
+  val budgetMinutes: Int,
+  val borrowCap: Int,
+  val plan: StopPlan,
+  // Start of each upcoming period that can be borrowed from, nearest first.
+  val upcomingDays: List<String>,
+  // When paused: the upcoming period (0 = the next) with its own time again,
+  // its start, and how much time it has.
+  val resumeIndex: Int,
+  val resumeDay: String?,
+  val resumeMs: Long,
+)
+
 private val MAX_BUDGET_MINUTES =
   mapOf(BudgetPeriod.DAY to 24 * 60, BudgetPeriod.WEEK to 7 * 24 * 60, BudgetPeriod.MONTH to 31 * 24 * 60)
 private const val MAX_PERIOD_COUNT = 7
@@ -94,7 +114,8 @@ internal object Budgets {
         store.budgets().map { budget ->
           val apps = appsByBudget[budget.id].orEmpty()
           val open = rollForward(budget, apps, now, fdow)
-          BudgetStatus(budget, apps, current(budget, apps, open, now, fdow))
+          val used = usedSince(budget, apps, open, now, fdow)
+          BudgetStatus(budget, apps, current(budget, open, used, fdow))
         }
       }
     syncTracker()
@@ -114,6 +135,97 @@ internal object Budgets {
     val borrowed = store.borrowedMs(periods.map { it.id })
     return periods.map { PastPeriod(it, borrowed[it.id] ?: 0L) }
   }
+
+  /**
+   * Where `packageName`'s budget stands against its stopping points, or null
+   * if it has none. Called by the pause screen from inside a tracker tick, so
+   * usage is already up to date and the tracker isn't synced here.
+   */
+  fun pauseStatus(packageName: String, now: Long = System.currentTimeMillis()): PauseStatus? {
+    val app = store.app(packageName) ?: return null
+    return store.transaction {
+      val budget = store.budget(app.budgetId) ?: return@transaction null
+      val fdow = store.firstDayOfWeek()
+      val apps = store.apps(budget.id)
+      val open = rollForward(budget, apps, now, fdow)
+      val settings = budget.settings
+      val budgetMs = settings.budgetMinutes * MINUTE_MS
+      val used = rawUsedSince(budget, apps, open, now, fdow)
+      val owed = store.outstandingBorrows(budget.id).sumOf { it.outstandingMs }
+      val plan =
+        Stops.plan(
+          ownBudgetMs = open.ownBudgetMs,
+          bankedInMs = open.bankedInMs,
+          budgetMs = budgetMs,
+          borrowCap = settings.borrowCap,
+          owedMs = owed,
+          continueUntilMs = open.continueUntilMs,
+          usedMs = used,
+        )
+      val upcomingDays = upcomingDays(settings.period, open.endDay, settings.borrowCap, fdow)
+      var resumeIndex = -1
+      var resumeDay: String? = null
+      var resumeMs = 0L
+      if (plan.paused) {
+        // The ledger's view of what is taken: borrowing in whole minutes.
+        val borrowed = Ledger.borrowedMs(open.ownBudgetMs, open.bankedInMs, Ledger.countedMs(used))
+        val (index, left) = Stops.resume(owed + borrowed, budgetMs)
+        resumeIndex = index
+        resumeDay =
+          upcomingDays.getOrNull(index)
+            ?: upcomingDays(settings.period, open.endDay, index + 1, fdow).last()
+        resumeMs = left
+      }
+      PauseStatus(
+        budgetId = budget.id,
+        periodId = open.id,
+        packageName = app.packageName,
+        appName = app.appName,
+        period = settings.period,
+        budgetMinutes = settings.budgetMinutes,
+        borrowCap = settings.borrowCap,
+        plan = plan,
+        upcomingDays = upcomingDays,
+        resumeIndex = resumeIndex,
+        resumeDay = resumeDay,
+        resumeMs = resumeMs,
+      )
+    }
+  }
+
+  /**
+   * Saves a choice on the pause screen: usage in period `periodId` may reach
+   * `untilMs` before the next pause. It never changes the ledger. Returns
+   * false when that period has ended since the screen was shown, or the
+   * choice no longer keeps the app open.
+   */
+  fun keepGoing(
+    budgetId: Long,
+    periodId: Long,
+    untilMs: Long,
+    now: Long = System.currentTimeMillis(),
+  ): Boolean =
+    store.transaction {
+      val budget = store.budget(budgetId) ?: return@transaction false
+      val fdow = store.firstDayOfWeek()
+      val apps = store.apps(budgetId)
+      val open = rollForward(budget, apps, now, fdow)
+      if (open.id != periodId) return@transaction false
+      val settings = budget.settings
+      val owed = store.outstandingBorrows(budgetId).sumOf { it.outstandingMs }
+      val capEnd =
+        Stops.capEndMs(
+          open.ownBudgetMs,
+          open.bankedInMs,
+          settings.budgetMinutes * MINUTE_MS,
+          settings.borrowCap,
+          owed,
+        )
+      val until = minOf(untilMs, capEnd)
+      if (until - rawUsedSince(budget, apps, open, now, fdow) < MIN_KEEP_GOING_MS) return@transaction false
+      store.setContinueUntil(open.id, until)
+      true
+    }
 
   /** Adds a budget for one app. It applies immediately, counting time already spent. */
   fun createAppBudget(app: NewApp, settings: BudgetSettings, now: Long = System.currentTimeMillis()): Long {
@@ -148,7 +260,7 @@ internal object Budgets {
     store.transaction {
       val budget = requireBudget(budgetId)
       val fdow = store.firstDayOfWeek()
-      val apps = store.apps().filter { it.budgetId == budgetId }
+      val apps = store.apps(budgetId)
       val open = rollForward(budget, apps, now, fdow)
       if (settings.period != budget.settings.period) {
         switchPeriod(budget, apps, open, settings, choice, now, fdow)
@@ -313,15 +425,8 @@ internal object Budgets {
     openCurrentPeriod(budget.id, settings, carried, now, fdow)
   }
 
-  private fun current(
-    budget: BudgetRow,
-    apps: List<BudgetAppRow>,
-    open: PeriodRow,
-    now: Long,
-    fdow: Int,
-  ): CurrentPeriod {
+  private fun current(budget: BudgetRow, open: PeriodRow, used: Long, fdow: Int): CurrentPeriod {
     val settings = budget.settings
-    val used = usedSince(budget, apps, open, now, fdow)
     val ownBudgetMs = open.ownBudgetMs
     val borrowed = Ledger.borrowedMs(ownBudgetMs, open.bankedInMs, used)
     val owed = store.outstandingBorrows(budget.id).sumOf { it.outstandingMs }
@@ -348,10 +453,20 @@ internal object Budgets {
     )
   }
 
-  // Usage in the current period so far. If the clock moved back before the
-  // period's start, the period stays (no second reset) and counts usage
-  // from the start of the period that contains now.
+  // Usage in the current period so far, in whole minutes (see [usage]).
   private fun usedSince(
+    budget: BudgetRow,
+    apps: List<BudgetAppRow>,
+    open: PeriodRow,
+    now: Long,
+    fdow: Int,
+  ): Long = Ledger.countedMs(rawUsedSince(budget, apps, open, now, fdow))
+
+  // Usage in the current period so far, unrounded, for the pause screen's
+  // stopping points. If the clock moved back before the period's start, the
+  // period stays (no second reset) and counts usage from the start of the
+  // period that contains now.
+  private fun rawUsedSince(
     budget: BudgetRow,
     apps: List<BudgetAppRow>,
     open: PeriodRow,
@@ -359,7 +474,17 @@ internal object Budgets {
     fdow: Int,
   ): Long {
     val currentStart = Periods.dayKey(Periods.periodStart(budget.settings.period, now, fdow))
-    return usage(apps, minOf(open.startDay, currentStart), null)
+    return UsageTracker.usage(apps.map { it.packageName }, minOf(open.startDay, currentStart), null)
+  }
+
+  // Start days of the `count` periods after the one ending at `endDay`, nearest first.
+  private fun upcomingDays(period: BudgetPeriod, endDay: String, count: Int, fdow: Int): List<String> {
+    var start = endDay
+    return List(count) {
+      val day = start
+      start = Periods.dayKey(Periods.nextPeriodStart(period, Periods.dayStart(start), fdow))
+      day
+    }
   }
 
   // A budget counts the time of every app it limits, in whole minutes.
@@ -388,6 +513,8 @@ internal object Budgets {
   private fun syncTracker() {
     UsageTracker.applyConfig(TrackerConfig.from(store))
     TrackingService.sync(appContext, store.hasApps())
+    // An edit can move or clear a stopping point.
+    PauseEnforcer.invalidate()
   }
 
   /** Re-checks whether the tracking service should run, e.g. after Usage Access changed. */

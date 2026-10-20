@@ -9,8 +9,7 @@ private const val DATABASE_NAME = "roolio.db"
 
 /*
  * Ordered schema migrations. Entry `i` upgrades the database from version `i`
- * to `i + 1`. Never edit a shipped migration; append a new one. (None has
- * shipped yet: Roolio is unreleased, so the first one is still edited in place.)
+ * to `i + 1`. Never edit a shipped migration; append a new one.
  *
  * Android 7 ships SQLite 3.9, so no UPSERT (3.24), STRICT tables (3.37) or
  * ALTER TABLE RENAME COLUMN (3.25).
@@ -88,6 +87,9 @@ private val MIGRATIONS: List<List<String>> =
         banked_out_ms  INTEGER CHECK (banked_out_ms >= 0),
         -- When the "5 minutes left" alert was sent, at most once.
         low_alert_at   INTEGER,
+        -- Usage this period may reach before the next pause, as chosen on the
+        -- pause screen; NULL until a choice.
+        continue_until_ms INTEGER CHECK (continue_until_ms >= 0),
         CHECK (start_day < end_day),
         CHECK ((closed_at IS NULL) = (used_ms IS NULL)),
         CHECK ((closed_at IS NULL) = (banked_out_ms IS NULL))

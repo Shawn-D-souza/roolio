@@ -56,6 +56,8 @@ internal data class PeriodRow(
   val usedMs: Long?,
   val bankedOutMs: Long?,
   val lowAlertAt: Long?,
+  // Usage this period may reach before the next pause, as chosen on the pause screen.
+  val continueUntilMs: Long?,
 ) {
   val ownBudgetMs: Long
     get() = Ledger.ownBudgetMs(budgetMinutes, repaidMs)
@@ -170,6 +172,15 @@ internal class BudgetStore(private val database: RoolioDatabase) {
       cursor.map { it.toBudgetApp() }
     }
 
+  /** The apps one budget limits. */
+  fun apps(budgetId: Long): List<BudgetAppRow> =
+    db
+      .rawQuery(
+        "SELECT * FROM budget_apps WHERE budget_id = ? ORDER BY added_at, package_name",
+        arrayOf(budgetId.toString()),
+      )
+      .use { cursor -> cursor.map { it.toBudgetApp() } }
+
   fun app(packageName: String): BudgetAppRow? =
     db.rawQuery("SELECT * FROM budget_apps WHERE package_name = ?", arrayOf(packageName)).use { cursor ->
       if (cursor.moveToFirst()) cursor.toBudgetApp() else null
@@ -280,6 +291,16 @@ internal class BudgetStore(private val database: RoolioDatabase) {
     db.update(
       "periods",
       ContentValues(1).apply { put("low_alert_at", time) },
+      "id = ?",
+      arrayOf(periodId.toString()),
+    )
+  }
+
+  /** Saves how far usage may go before the next pause, as chosen on the pause screen. */
+  fun setContinueUntil(periodId: Long, usedMs: Long) {
+    db.update(
+      "periods",
+      ContentValues(1).apply { put("continue_until_ms", usedMs) },
       "id = ?",
       arrayOf(periodId.toString()),
     )
@@ -420,6 +441,7 @@ private fun Cursor.toPeriod() =
     usedMs = longOrNull("used_ms"),
     bankedOutMs = longOrNull("banked_out_ms"),
     lowAlertAt = longOrNull("low_alert_at"),
+    continueUntilMs = longOrNull("continue_until_ms"),
   )
 
 private fun Cursor.toBorrow() =

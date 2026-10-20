@@ -13,7 +13,7 @@ internal const val MINUTE_MS = 60_000L
  */
 internal object Ledger {
   /**
-   * Usage as the ledger counts it: whole minutes, rounded down (PRD 6.1).
+   * Usage as the ledger counts it: whole minutes, rounded down.
    * Every amount derived from it is then a whole number of minutes, so the
    * numbers shown always add up.
    */

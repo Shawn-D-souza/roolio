@@ -14,6 +14,7 @@ import expo.modules.roolio.core.R
 private const val TRACKING_CHANNEL_ID = "budget_tracking"
 private const val ALERTS_CHANNEL_ID = "permission_alerts"
 private const val ACCESS_LOST_ID = 1002
+private const val OVERLAY_OFF_ID = 1003
 
 // Roolio's primary indigo (light theme `primary`).
 private const val ACCENT_COLOR = 0xFF4F46B8.toInt()
@@ -44,15 +45,42 @@ internal object Notifications {
 
   /** Tells the user that tracking stopped because Usage Access was turned off. */
   fun showAccessLost(context: Context) {
+    showPermissionAlert(
+      context,
+      ACCESS_LOST_ID,
+      R.string.roolio_access_lost_title,
+      R.string.roolio_access_lost_text,
+    )
+  }
+
+  fun cancelAccessLost(context: Context) {
+    NotificationManagerCompat.from(context).cancel(ACCESS_LOST_ID)
+  }
+
+  /** Tells the user that apps aren't paused because Display over other apps was turned off. */
+  fun showOverlayOff(context: Context) {
+    showPermissionAlert(
+      context,
+      OVERLAY_OFF_ID,
+      R.string.roolio_overlay_off_title,
+      R.string.roolio_overlay_off_text,
+    )
+  }
+
+  fun cancelOverlayOff(context: Context) {
+    NotificationManagerCompat.from(context).cancel(OVERLAY_OFF_ID)
+  }
+
+  private fun showPermissionAlert(context: Context, id: Int, titleRes: Int, textRes: Int) {
     val manager = NotificationManagerCompat.from(context)
     if (!manager.areNotificationsEnabled()) return
     ensureChannels(context)
-    val text = context.getString(R.string.roolio_access_lost_text)
+    val text = context.getString(textRes)
     val notification =
       NotificationCompat.Builder(context, ALERTS_CHANNEL_ID)
         .setSmallIcon(R.drawable.roolio_ic_notification)
         .setColor(ACCENT_COLOR)
-        .setContentTitle(context.getString(R.string.roolio_access_lost_title))
+        .setContentTitle(context.getString(titleRes))
         .setContentText(text)
         .setStyle(NotificationCompat.BigTextStyle().bigText(text))
         .setContentIntent(openRoolio(context))
@@ -62,14 +90,10 @@ internal object Notifications {
         .setOnlyAlertOnce(true)
         .build()
     try {
-      manager.notify(ACCESS_LOST_ID, notification)
+      manager.notify(id, notification)
     } catch (ignored: SecurityException) {
       // Notifications were turned off in the meantime.
     }
-  }
-
-  fun cancelAccessLost(context: Context) {
-    NotificationManagerCompat.from(context).cancel(ACCESS_LOST_ID)
   }
 
   // Opens Roolio as if from the launcher. It shows the permissions screen by

@@ -9,4 +9,61 @@
     <string name="roolio_alerts_channel_description">Tells you when a permission Roolio needs is turned off.</string>
     <string name="roolio_access_lost_title">Usage access is off</string>
     <string name="roolio_access_lost_text">Roolio can\'t track your budgets right now. Your budgets are kept. Tap to turn it back on.</string>
+
+    <string name="roolio_overlay_off_title">Display over other apps is off</string>
+    <string name="roolio_overlay_off_text">Roolio can\'t pause apps when their time runs out. Your budgets are kept. Tap to turn it back on.</string>
+
+    <!-- Pause screen. Durations read like the app: "45 min", "1h", "1h 30m". -->
+    <string name="roolio_duration_minutes">%1$d min</string>
+    <string name="roolio_duration_hours">%1$dh</string>
+    <string name="roolio_duration_hours_minutes">%1$dh %2$dm</string>
+
+    <string name="roolio_pause_window_title">Roolio pause screen</string>
+    <!-- The app is already closed, so this only puts the card away. -->
+    <string name="roolio_pause_close">Got it</string>
+
+    <string name="roolio_pause_out_day">Time\'s up for today</string>
+    <string name="roolio_pause_out_week">Time\'s up for this week</string>
+    <string name="roolio_pause_out_month">Time\'s up for this month</string>
+
+    <string name="roolio_pause_used_tomorrow">Tomorrow\'s time is used</string>
+    <!-- %1$s: a weekday, "Thursday". -->
+    <string name="roolio_pause_used_day">%1$s\'s time is used</string>
+    <string name="roolio_pause_used_next_day">Next %1$s\'s time is used</string>
+    <string name="roolio_pause_used_next_week">Next week\'s time is used</string>
+    <!-- %1$s: the date the week starts, "Nov 2". -->
+    <string name="roolio_pause_used_week_of">Time from the week of %1$s is used</string>
+    <!-- %1$s: a month, "November". -->
+    <string name="roolio_pause_used_month">%1$s\'s time is used</string>
+    <string name="roolio_pause_extra_title">Your extra time is up</string>
+
+    <!-- %1$s: a duration, "6 min". -->
+    <string name="roolio_pause_use_tomorrow">Borrow %1$s from tomorrow</string>
+    <!-- %1$s: a duration, %2$s: a weekday. "Borrow 50 min from Thursday". -->
+    <string name="roolio_pause_use_day">Borrow %1$s from %2$s</string>
+    <string name="roolio_pause_use_next_day">Borrow %1$s from next %2$s</string>
+    <string name="roolio_pause_use_next_week">Borrow %1$s from next week</string>
+    <!-- %1$s: a duration, %2$s: the date the week starts. -->
+    <string name="roolio_pause_use_week_of">Borrow %1$s from the week of %2$s</string>
+    <!-- %1$s: a duration, %2$s: a month. -->
+    <string name="roolio_pause_use_month">Borrow %1$s from %2$s</string>
+    <plurals name="roolio_pause_more_minutes">
+        <item quantity="one">%1$d more minute</item>
+        <item quantity="other">%1$d more minutes</item>
+    </plurals>
+
+    <string name="roolio_pause_blocked_day">That\'s all for today</string>
+    <string name="roolio_pause_blocked_week">That\'s all for this week</string>
+    <string name="roolio_pause_blocked_month">That\'s all for this month</string>
+    <!-- %1$s: the app, %2$s: a duration. -->
+    <string name="roolio_pause_back_tomorrow">%1$s has %2$s again tomorrow.</string>
+    <!-- %3$s: a weekday or a date. -->
+    <string name="roolio_pause_back_on">%1$s has %2$s again on %3$s.</string>
+    <string name="roolio_pause_back_next_week">%1$s has %2$s again next week.</string>
+    <string name="roolio_pause_back_week_of">%1$s has %2$s again the week of %3$s.</string>
+    <string name="roolio_pause_back_next_month">%1$s has %2$s again next month.</string>
+    <!-- %3$s: a month. -->
+    <string name="roolio_pause_back_in">%1$s has %2$s again in %3$s.</string>
+    <string name="roolio_pause_back_later">%1$s has time again when its budget resets.</string>
+    <string name="roolio_pause_borrowed_all">You\'ve borrowed all you can for now.</string>
 </resources>

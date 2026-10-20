@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.ServiceInfo
+import android.content.res.Configuration
 import android.os.Build
 import android.os.IBinder
 import android.os.PowerManager
@@ -13,10 +14,12 @@ import android.util.Log
 import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
 import expo.modules.roolio.core.budgets.BudgetStore
+import expo.modules.roolio.core.budgets.Budgets
 import expo.modules.roolio.core.db.RoolioDatabase
 
 /**
- * Keeps [UsageTracker] running while other apps are in use.
+ * Keeps [UsageTracker] running while other apps are in use, and owns the
+ * pause screen ([PauseOverlay]) that [PauseEnforcer] shows over them.
  *
  * It does work only while the screen is on. When the screen turns off, all
  * callbacks are removed, so the CPU is never woken for Roolio. There are no
@@ -33,10 +36,30 @@ class TrackingService : Service() {
       }
     }
 
+  // A new launcher or dialer changes which apps are exempt.
+  private val packageReceiver =
+    object : BroadcastReceiver() {
+      override fun onReceive(context: Context, intent: Intent) {
+        UsageTracker.post { SystemApps.invalidate() }
+      }
+    }
+
+  private lateinit var overlay: PauseOverlay
+
   override fun onCreate() {
     super.onCreate()
     isRunning = true
-    UsageTracker.init(this)
+    // The service can start at boot, before (or without) the JS module.
+    Budgets.init(this)
+    PauseEnforcer.init(this)
+    overlay =
+      PauseOverlay(
+        this,
+        onClose = { UsageTracker.post { PauseEnforcer.onClose() } },
+        onKeepGoing = { keepGoing -> UsageTracker.post { PauseEnforcer.onKeepGoing(keepGoing) } },
+        onShowFailed = { UsageTracker.post { PauseEnforcer.onShowFailed() } },
+      )
+    PauseEnforcer.overlay = overlay
     UsageTracker.onAccessLost = {
       Notifications.showAccessLost(this)
       stopSelf()
@@ -46,8 +69,21 @@ class TrackingService : Service() {
         addAction(Intent.ACTION_SCREEN_ON)
         addAction(Intent.ACTION_SCREEN_OFF)
       }
-    // Screen broadcasts are system-only, so the receiver needs no export.
+    // Screen and package broadcasts are system-only, so the receivers need no export.
     ContextCompat.registerReceiver(this, screenReceiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED)
+    val packages =
+      IntentFilter().apply {
+        addAction(Intent.ACTION_PACKAGE_ADDED)
+        addAction(Intent.ACTION_PACKAGE_REMOVED)
+        addAction(Intent.ACTION_PACKAGE_CHANGED)
+        addDataScheme("package")
+      }
+    ContextCompat.registerReceiver(this, packageReceiver, packages, ContextCompat.RECEIVER_NOT_EXPORTED)
+  }
+
+  override fun onConfigurationChanged(newConfig: Configuration) {
+    super.onConfigurationChanged(newConfig)
+    overlay.onConfigurationChanged()
   }
 
   override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -69,7 +105,10 @@ class TrackingService : Service() {
 
   override fun onDestroy() {
     unregisterReceiver(screenReceiver)
+    unregisterReceiver(packageReceiver)
     UsageTracker.onAccessLost = null
+    PauseEnforcer.overlay = null
+    overlay.hide()
     UsageTracker.stopTicking()
     isRunning = false
     super.onDestroy()

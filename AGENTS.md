@@ -21,7 +21,7 @@ npx expo-doctor             # diagnose dependency and config issues
 npx expo install --fix      # fix incompatible package versions
 ```
 
-Run lint and typecheck before declaring any task done.
+The developer builds the app (Gradle/Expo) and runs lint and typecheck themselves. Don't run builds, lint, typecheck or `adb`. When a task is done, say what to build and check instead.
 
 ## Navigation & Routing
 
@@ -39,3 +39,10 @@ Docs: https://docs.expo.dev/eas/index.md
 - If `ios/` and `android/` directories do not exist, they are generated (Continuous Native Generation). Never create or edit them by hand — configure native behavior in `app.json` and config plugins.
 - Expo Go only includes its bundled native modules. After adding a library with native code, the app needs a development build: `npx expo run:ios|android` locally, or `eas build --profile development`.
 - Prefer recommended Expo modules over third-party libraries, and check your available skills before adding dependencies. Docs: https://docs.expo.dev/versions/latest/index.md
+
+## Code conventions
+
+- Write every change to production quality. The app hasn't shipped yet, but the code in this repo is the code that will ship.
+- Don't mention the app's release status in code or comments: no "unreleased", "not shipped yet", "temporary", "for testing" or similar notes.
+- Nothing has shipped, so there's nothing to stay compatible with. Change or remove earlier code, schema and migrations directly (for example, edit a database migration in place) instead of adding compatibility layers or new migrations.
+- Don't reference the PRD (`Roolio_PRD.md`) or its section numbers in code or comments. Comments should explain the code on their own.
