@@ -14,8 +14,9 @@ type ClassicPermissionStepProps = {
   busy: boolean;
   // The main button: opens Settings or shows the system dialog.
   onAction: () => void;
-  // Shown for optional steps only.
+  // Shown for optional steps only: skip until the app is opened again, or for good.
   onNotNow: () => void;
+  onDontAskAgain: () => void;
 };
 
 /** A permission on one screen with a single action. */
@@ -26,6 +27,7 @@ export function ClassicPermissionStep({
   busy,
   onAction,
   onNotNow,
+  onDontAskAgain,
 }: ClassicPermissionStepProps) {
   const { colors } = useAppTheme();
 
@@ -88,7 +90,20 @@ export function ClassicPermissionStep({
           busy={busy}
           onPress={onAction}
         />
-        {!content.required && <TextButton label="Not now" onPress={onNotNow} />}
+        {!content.required && (
+          <>
+            <TextButton
+              label="Not now"
+              variant="secondary"
+              onPress={onNotNow}
+            />
+            <TextButton
+              label="Don't ask again"
+              variant="subtle"
+              onPress={onDontAskAgain}
+            />
+          </>
+        )}
       </View>
     </>
   );
@@ -143,6 +158,6 @@ const styles = StyleSheet.create({
   actions: {
     paddingHorizontal: space.lg,
     paddingBottom: space.md,
-    gap: space.xs,
+    gap: space.sm,
   },
 });

@@ -11,6 +11,8 @@ import { AppState } from "react-native";
 import {
   getPermissionStatus,
   hasCompletedSetup,
+  hasDeclinedNotifications,
+  markNotificationsDeclined,
   markSetupCompleted,
   PermissionStatus,
 } from "../../modules/roolio-permissions";
@@ -22,13 +24,17 @@ const RECHECK_DELAY_MS = 600;
 type PermissionsContextType = {
   status: PermissionStatus;
   // True when a required permission is missing, or notifications are missing
-  // and the user hasn't chosen "Not now" since the app was opened.
+  // and the user hasn't chosen "Not now" since the app was opened, or "Don't
+  // ask again" ever.
   needsSetup: boolean;
   // False until the required permissions have been granted once. After that,
   // a missing permission means it was turned off, not never set up.
   setupCompleted: boolean;
   notificationsDeferred: boolean;
+  // "Not now": skips the notifications step until the app is opened again.
   deferNotifications: () => void;
+  // "Don't ask again": skips it for good.
+  declineNotifications: () => void;
   refresh: () => void;
 };
 
@@ -51,8 +57,11 @@ function hasRequiredPermissions(status: PermissionStatus) {
 export function PermissionsProvider({ children }: { children: ReactNode }) {
   // Read synchronously so the first render already shows the right screen.
   const [status, setStatus] = useState(getPermissionStatus);
-  // Lasts for this app session only, so the screen returns on the next open.
-  const [notificationsDeferred, setNotificationsDeferred] = useState(false);
+  // "Not now" lasts for this app session only, so the screen returns on the
+  // next open; "Don't ask again" is remembered.
+  const [notificationsDeferred, setNotificationsDeferred] = useState(
+    hasDeclinedNotifications,
+  );
   const [setupCompleted, setSetupCompleted] = useState(
     () => hasCompletedSetup() || hasRequiredPermissions(status),
   );
@@ -89,6 +98,11 @@ export function PermissionsProvider({ children }: { children: ReactNode }) {
     [],
   );
 
+  const declineNotifications = useCallback(() => {
+    markNotificationsDeclined();
+    setNotificationsDeferred(true);
+  }, []);
+
   const value = useMemo(
     () => ({
       status,
@@ -98,9 +112,17 @@ export function PermissionsProvider({ children }: { children: ReactNode }) {
       setupCompleted,
       notificationsDeferred,
       deferNotifications,
+      declineNotifications,
       refresh,
     }),
-    [status, setupCompleted, notificationsDeferred, deferNotifications, refresh],
+    [
+      status,
+      setupCompleted,
+      notificationsDeferred,
+      deferNotifications,
+      declineNotifications,
+      refresh,
+    ],
   );
 
   return (

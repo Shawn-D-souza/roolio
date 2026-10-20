@@ -2,6 +2,7 @@ package expo.modules.roolio.core.budgets
 
 import android.content.Context
 import expo.modules.roolio.core.db.RoolioDatabase
+import expo.modules.roolio.core.tracking.Notifications
 import expo.modules.roolio.core.tracking.PauseEnforcer
 import expo.modules.roolio.core.tracking.TrackerConfig
 import expo.modules.roolio.core.tracking.TrackingService
@@ -77,6 +78,10 @@ internal data class PauseStatus(
   val resumeIndex: Int,
   val resumeDay: String?,
   val resumeMs: Long,
+  // While not paused: the alert due now, as the time left it warns of, and
+  // the usage until the next one. Null when there is none.
+  val alertDueMs: Long?,
+  val nextAlertInMs: Long?,
 )
 
 private val MAX_BUDGET_MINUTES =
@@ -189,8 +194,15 @@ internal object Budgets {
         resumeIndex = resumeIndex,
         resumeDay = resumeDay,
         resumeMs = resumeMs,
+        alertDueMs = Stops.alertDue(plan, open.alertStopMs, open.alertLeftMs),
+        nextAlertInMs = Stops.nextAlertInMs(plan, open.alertStopMs, open.alertLeftMs),
       )
     }
+  }
+
+  /** Records that the alert `leftMs` before the pause at `stopAtMs` was sent, so it's sent once. */
+  fun recordAlert(periodId: Long, stopAtMs: Long, leftMs: Long) {
+    store.setAlert(periodId, stopAtMs, leftMs)
   }
 
   /**
@@ -222,8 +234,11 @@ internal object Budgets {
           owed,
         )
       val until = minOf(untilMs, capEnd)
-      if (until - rawUsedSince(budget, apps, open, now, fdow) < MIN_KEEP_GOING_MS) return@transaction false
+      val left = until - rawUsedSince(budget, apps, open, now, fdow)
+      if (left < MIN_KEEP_GOING_MS) return@transaction false
       store.setContinueUntil(open.id, until)
+      // The user just chose this much time: only alerts for less are sent.
+      store.setAlert(open.id, until, left)
       true
     }
 
@@ -284,16 +299,19 @@ internal object Budgets {
   /** Removes the budgets of these apps, with their history. */
   fun deleteAppBudgets(packageNames: Collection<String>) {
     if (packageNames.isEmpty()) return
-    store.transaction {
-      val budgetIds =
-        packageNames
-          .mapNotNull { store.app(it)?.budgetId }
-          .distinct()
-          .filter { store.budget(it)?.kind == BudgetKind.APP }
-      store.deleteBudgets(budgetIds)
-      // Apps in a group leave it; the group keeps its budget.
-      store.deleteApps(packageNames)
-    }
+    val budgetIds =
+      store.transaction {
+        val budgetIds =
+          packageNames
+            .mapNotNull { store.app(it)?.budgetId }
+            .distinct()
+            .filter { store.budget(it)?.kind == BudgetKind.APP }
+        store.deleteBudgets(budgetIds)
+        // Apps in a group leave it; the group keeps its budget.
+        store.deleteApps(packageNames)
+        budgetIds
+      }
+    for (id in budgetIds) Notifications.cancelTimeLeft(appContext, id)
     syncTracker()
   }
 

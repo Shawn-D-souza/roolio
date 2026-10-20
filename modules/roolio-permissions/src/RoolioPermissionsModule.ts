@@ -9,6 +9,8 @@ declare class RoolioPermissionsModule extends NativeModule<{}> {
   getStatus(): PermissionStatus;
   hasCompletedSetup(): boolean;
   markSetupCompleted(): void;
+  hasDeclinedNotifications(): boolean;
+  markNotificationsDeclined(): void;
   getNotificationPermissionAsync(): Promise<NotificationPermission>;
   requestNotificationPermissionAsync(): Promise<NotificationPermission>;
   openSettings(permission: PermissionName, hint: string): void;

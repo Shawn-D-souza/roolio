@@ -55,7 +55,10 @@ internal data class PeriodRow(
   val bankedInMs: Long,
   val usedMs: Long?,
   val bankedOutMs: Long?,
-  val lowAlertAt: Long?,
+  // The last alert before a pause: the stopping point it was for, and the
+  // time left it warned of.
+  val alertStopMs: Long?,
+  val alertLeftMs: Long?,
   // Usage this period may reach before the next pause, as chosen on the pause screen.
   val continueUntilMs: Long?,
 ) {
@@ -287,10 +290,14 @@ internal class BudgetStore(private val database: RoolioDatabase) {
     )
   }
 
-  fun setLowAlertAt(periodId: Long, time: Long) {
+  /** Records an alert before a pause: the stopping point it was for and the time left it warned of. */
+  fun setAlert(periodId: Long, stopMs: Long, leftMs: Long) {
     db.update(
       "periods",
-      ContentValues(1).apply { put("low_alert_at", time) },
+      ContentValues(2).apply {
+        put("alert_stop_ms", stopMs)
+        put("alert_left_ms", leftMs)
+      },
       "id = ?",
       arrayOf(periodId.toString()),
     )
@@ -440,7 +447,8 @@ private fun Cursor.toPeriod() =
     bankedInMs = long("banked_in_ms"),
     usedMs = longOrNull("used_ms"),
     bankedOutMs = longOrNull("banked_out_ms"),
-    lowAlertAt = longOrNull("low_alert_at"),
+    alertStopMs = longOrNull("alert_stop_ms"),
+    alertLeftMs = longOrNull("alert_left_ms"),
     continueUntilMs = longOrNull("continue_until_ms"),
   )
 

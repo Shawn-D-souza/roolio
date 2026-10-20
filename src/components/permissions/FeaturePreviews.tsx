@@ -52,7 +52,7 @@ export function NotificationPreview() {
               { color: colors.onSurfaceVariant },
             ]}
           >
-            Wrap up, or borrow tomorrow&apos;s time when it runs out.
+            Wrap up, or borrow more time when it runs out.
           </Text>
         </View>
       </View>

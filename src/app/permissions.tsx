@@ -30,6 +30,7 @@ export default function PermissionsScreen() {
     setupCompleted,
     notificationsDeferred,
     deferNotifications,
+    declineNotifications,
     refresh,
   } = usePermissions();
 
@@ -195,6 +196,7 @@ export default function PermissionsScreen() {
               content.opensSettings ? openSettings : requestNotifications
             }
             onNotNow={deferNotifications}
+            onDontAskAgain={declineNotifications}
           />
         )}
       </Animated.View>

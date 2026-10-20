@@ -5,23 +5,51 @@ import { radius } from "../../theme/tokens";
 type TextButtonProps = {
   label: string;
   onPress: () => void;
+  // "secondary" has a neutral grey fill: the screen's second choice.
+  // "subtle" is smaller and grey: the least likely choice on the screen.
+  variant?: "text" | "secondary" | "subtle";
 };
 
-// A full-width, low-emphasis button, used under a PrimaryButton.
-export function TextButton({ label, onPress }: TextButtonProps) {
+// A full-width button with less emphasis than a PrimaryButton, used under one.
+export function TextButton({
+  label,
+  onPress,
+  variant = "text",
+}: TextButtonProps) {
   const { colors } = useAppTheme();
+  const secondary = variant === "secondary";
+  const labelColor =
+    variant === "subtle" ? colors.onSurfaceVariant : colors.primary;
 
   // Android ripples ignore borderRadius on the Pressable itself, so a rounded
   // wrapper clips the ripple to the pill shape.
   return (
-    <View style={styles.clip}>
+    <View
+      style={[
+        styles.clip,
+        secondary && { backgroundColor: colors.surfaceContainerHighest },
+      ]}
+    >
       <Pressable
         onPress={onPress}
         accessibilityRole="button"
-        android_ripple={{ color: colors.surfaceContainerHighest }}
+        android_ripple={{
+          // The label color at 12% opacity: Material's pressed state.
+          color: secondary
+            ? `${colors.primary}1F`
+            : colors.surfaceContainerHighest,
+        }}
         style={styles.button}
       >
-        <Text style={[styles.label, { color: colors.primary }]}>{label}</Text>
+        <Text
+          style={[
+            styles.label,
+            variant === "subtle" && styles.subtleLabel,
+            { color: labelColor },
+          ]}
+        >
+          {label}
+        </Text>
       </Pressable>
     </View>
   );
@@ -40,5 +68,9 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 15,
     fontWeight: "600",
+  },
+  subtleLabel: {
+    fontSize: 13,
+    fontWeight: "500",
   },
 });

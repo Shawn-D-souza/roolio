@@ -10,9 +10,15 @@ import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import expo.modules.roolio.core.R
+import expo.modules.roolio.core.budgets.BudgetPeriod
+import expo.modules.roolio.core.budgets.MINUTE_MS
+import expo.modules.roolio.core.budgets.PauseStatus
 
 private const val TRACKING_CHANNEL_ID = "budget_tracking"
 private const val ALERTS_CHANNEL_ID = "permission_alerts"
+private const val TIME_CHANNEL_ID = "time_alerts"
+// Time-left alerts are tagged and keyed by budget id, one per budget.
+private const val TIME_LEFT_TAG = "time_left"
 private const val ACCESS_LOST_ID = 1002
 private const val OVERLAY_OFF_ID = 1003
 
@@ -69,6 +75,55 @@ internal object Notifications {
 
   fun cancelOverlayOff(context: Context) {
     NotificationManagerCompat.from(context).cancel(OVERLAY_OFF_ID)
+  }
+
+  /**
+   * Tells the user that `status`'s app is about to be paused. The alert for
+   * the same budget replaces it, so "1 minute left" replaces "5 minutes left".
+   */
+  fun showTimeLeft(context: Context, status: PauseStatus) {
+    val manager = NotificationManagerCompat.from(context)
+    if (!manager.areNotificationsEnabled()) return
+    ensureChannels(context)
+    val res = context.resources
+    val plan = status.plan
+    // Rounded up, as Home shows it: the ledger counts usage in whole minutes, rounded down.
+    val minutes = ((plan.remainingMs + MINUTE_MS - 1) / MINUTE_MS).toInt().coerceAtLeast(1)
+    // Whether more time can be borrowed when this pause comes.
+    val text =
+      res.getString(
+        if (plan.stopAtMs < plan.capEndMs) {
+          R.string.roolio_time_left_text_borrow
+        } else {
+          when (status.period) {
+            BudgetPeriod.DAY -> R.string.roolio_time_left_text_last_day
+            BudgetPeriod.WEEK -> R.string.roolio_time_left_text_last_week
+            BudgetPeriod.MONTH -> R.string.roolio_time_left_text_last_month
+          }
+        }
+      )
+    val notification =
+      NotificationCompat.Builder(context, TIME_CHANNEL_ID)
+        .setSmallIcon(R.drawable.roolio_ic_notification)
+        .setColor(ACCENT_COLOR)
+        .setContentTitle(res.getQuantityString(R.plurals.roolio_time_left_title, minutes, minutes, status.appName))
+        .setContentText(text)
+        .setStyle(NotificationCompat.BigTextStyle().bigText(text))
+        .setContentIntent(openRoolio(context))
+        .setCategory(NotificationCompat.CATEGORY_REMINDER)
+        .setPriority(NotificationCompat.PRIORITY_HIGH)
+        .setAutoCancel(true)
+        .setLocalOnly(true)
+        .build()
+    try {
+      manager.notify(TIME_LEFT_TAG, status.budgetId.toInt(), notification)
+    } catch (ignored: SecurityException) {
+      // Notifications were turned off in the meantime.
+    }
+  }
+
+  fun cancelTimeLeft(context: Context, budgetId: Long) {
+    NotificationManagerCompat.from(context).cancel(TIME_LEFT_TAG, budgetId.toInt())
   }
 
   private fun showPermissionAlert(context: Context, id: Int, titleRes: Int, textRes: Int) {
@@ -139,6 +194,17 @@ internal object Notifications {
           description = context.getString(R.string.roolio_alerts_channel_description)
           setShowBadge(false)
         }
-    manager.createNotificationChannels(listOf(tracking, alerts))
+    // High importance: it shows over the app being used, which is the point.
+    val time =
+      NotificationChannel(
+          TIME_CHANNEL_ID,
+          context.getString(R.string.roolio_time_channel_name),
+          NotificationManager.IMPORTANCE_HIGH,
+        )
+        .apply {
+          description = context.getString(R.string.roolio_time_channel_description)
+          setShowBadge(false)
+        }
+    manager.createNotificationChannels(listOf(tracking, alerts, time))
   }
 }

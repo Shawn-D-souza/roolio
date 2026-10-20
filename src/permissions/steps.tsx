@@ -207,7 +207,7 @@ export function getStepContent(
         required: false,
         illustration: <NotificationPreview />,
         title: "Know before time runs out",
-        body: "Get a heads-up when 5 minutes are left, so you can wrap up instead of being cut off.",
+        body: "Get a heads-up 5 minutes and 1 minute before an app is paused, so you can wrap up instead of being cut off.",
         note: {
           icon: "notifications-none",
           text: "Only alerts about your budgets. Never ads.",

@@ -4,6 +4,9 @@ package expo.modules.roolio.core.budgets
 internal const val EXTRA_MS = 5 * MINUTE_MS
 // A way to keep going shorter than this isn't offered: it would end as it starts.
 internal const val MIN_KEEP_GOING_MS = 1_000L
+// Alerts before each pause, by time left, the earliest first.
+internal const val FIRST_ALERT_LEFT_MS = 5 * MINUTE_MS
+private val ALERT_LEFT_MS = longArrayOf(FIRST_ALERT_LEFT_MS, MINUTE_MS)
 
 /** Why an app is paused. */
 internal enum class PauseReason {
@@ -130,6 +133,27 @@ internal object Stops {
   fun resume(takenMs: Long, budgetMs: Long): Pair<Int, Long> {
     val taken = takenMs.coerceAtLeast(0L)
     return (taken / budgetMs).toInt() to budgetMs - taken % budgetMs
+  }
+
+  /**
+   * The alert due before the next pause, as the time left it warns of, or
+   * null. `alertStopMs` and `alertLeftMs` are the last alert sent: each
+   * stopping point gets each alert once. When several are due at once (the
+   * app came on screen with 30 s left), only the latest is sent.
+   */
+  fun alertDue(plan: StopPlan, alertStopMs: Long?, alertLeftMs: Long?): Long? {
+    if (plan.paused) return null
+    val due = ALERT_LEFT_MS.lastOrNull { plan.remainingMs <= it } ?: return null
+    val sent = alertLeftMs.takeIf { alertStopMs == plan.stopAtMs } ?: return due
+    return due.takeIf { it < sent }
+  }
+
+  /** Usage until the next alert before this pause is due, or null if none is left. */
+  fun nextAlertInMs(plan: StopPlan, alertStopMs: Long?, alertLeftMs: Long?): Long? {
+    if (plan.paused) return null
+    val sent = alertLeftMs.takeIf { alertStopMs == plan.stopAtMs } ?: Long.MAX_VALUE
+    val next = ALERT_LEFT_MS.firstOrNull { it < sent && plan.remainingMs > it } ?: return null
+    return plan.remainingMs - next
   }
 
   // Usage at which upcoming period `index` is used up.

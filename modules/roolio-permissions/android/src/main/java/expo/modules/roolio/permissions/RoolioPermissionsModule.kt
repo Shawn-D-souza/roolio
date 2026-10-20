@@ -23,6 +23,7 @@ import expo.modules.kotlin.modules.ModuleDefinition
 
 private const val PREFS_NAME = "roolio_permissions"
 private const val KEY_SETUP_COMPLETED = "setup_completed"
+private const val KEY_NOTIFICATIONS_DECLINED = "notifications_declined"
 
 // How often, and for how long, to check whether the user granted the permission in Settings.
 private const val WATCH_INTERVAL_MS = 400L
@@ -83,6 +84,15 @@ class RoolioPermissionsModule : Module() {
 
     Function("markSetupCompleted") {
       prefs().edit().putBoolean(KEY_SETUP_COMPLETED, true).apply()
+    }
+
+    // Whether the user chose not to be asked for notifications again.
+    Function("hasDeclinedNotifications") {
+      prefs().getBoolean(KEY_NOTIFICATIONS_DECLINED, false)
+    }
+
+    Function("markNotificationsDeclined") {
+      prefs().edit().putBoolean(KEY_NOTIFICATIONS_DECLINED, true).apply()
     }
 
     AsyncFunction("getNotificationPermissionAsync") { promise: Promise ->

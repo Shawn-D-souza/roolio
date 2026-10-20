@@ -5,8 +5,10 @@ import android.os.SystemClock
 import android.provider.Settings
 import android.util.Log
 import expo.modules.roolio.core.budgets.Budgets
+import expo.modules.roolio.core.budgets.FIRST_ALERT_LEFT_MS
 import expo.modules.roolio.core.budgets.KeepGoing
 import expo.modules.roolio.core.budgets.PauseStatus
+import expo.modules.roolio.core.budgets.Stops
 
 private const val TAG = "RoolioCore"
 // The longest a budget goes unchecked while its app is on screen, or while the
@@ -27,6 +29,9 @@ private const val ON_SCREEN_RETRY_MS = 5_000L
  *
  * Every budgeted app on screen is checked, not only the one in front: an app
  * in picture-in-picture or the other half of split screen spends its time too.
+ *
+ * Before each pause, it sends a time-left alert at 5 minutes and at 1 minute
+ * (see [Stops.alertDue]), once per stopping point.
  *
  * Cheap per tick: with no budgeted app on screen it's a few set lookups. When
  * one appears, its budget is read once and the time to its next stop is kept.
@@ -59,6 +64,8 @@ internal object PauseEnforcer {
   private var homeSentAt = 0L
 
   private var overlayOffNotified = false
+  // Budgets with a time-left alert showing, to take it down once it's out of date.
+  private val alerted = HashSet<Long>()
 
   @Synchronized
   fun init(context: Context) {
@@ -186,11 +193,21 @@ internal object PauseEnforcer {
 
   private fun check(packageName: String, inFront: Boolean, elapsed: Long) {
     val status = Budgets.pauseStatus(packageName)
-    if (status == null || !status.plan.paused) {
-      nextCheckAt[packageName] = elapsed + minOf(status?.plan?.remainingMs ?: RECHECK_MS, RECHECK_MS)
+    if (status == null) {
+      nextCheckAt[packageName] = elapsed + RECHECK_MS
+      return
+    }
+    if (!status.plan.paused) {
+      alertTimeLeft(status)
+      nextCheckAt[packageName] =
+        elapsed + minOf(status.plan.remainingMs, status.nextAlertInMs ?: RECHECK_MS, RECHECK_MS)
       return
     }
     nextCheckAt[packageName] = elapsed + RECHECK_MS
+    // The pause screen takes over from the alert, even one sent before the
+    // process restarted.
+    alerted -= status.budgetId
+    Notifications.cancelTimeLeft(appContext, status.budgetId)
     val overlay = overlay
     if (overlay == null || !Settings.canDrawOverlays(appContext)) {
       notifyOverlayOff()
@@ -232,6 +249,19 @@ internal object PauseEnforcer {
       nextCheckAt[packageName] = elapsed + ON_SCREEN_RETRY_MS
     } else {
       nextCheckAt.remove(packageName)
+    }
+  }
+
+  // Sends the alert due before the app's next pause. One showing for time
+  // that was given back since (an edit or a reset) is taken down.
+  private fun alertTimeLeft(status: PauseStatus) {
+    val leftMs = status.alertDueMs
+    if (leftMs != null) {
+      Budgets.recordAlert(status.periodId, status.plan.stopAtMs, leftMs)
+      Notifications.showTimeLeft(appContext, status)
+      alerted += status.budgetId
+    } else if (status.plan.remainingMs > FIRST_ALERT_LEFT_MS && alerted.remove(status.budgetId)) {
+      Notifications.cancelTimeLeft(appContext, status.budgetId)
     }
   }
 

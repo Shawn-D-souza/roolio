@@ -85,14 +85,18 @@ private val MIGRATIONS: List<List<String>> =
         -- Final usage and banked time carried out; NULL while open.
         used_ms        INTEGER CHECK (used_ms >= 0),
         banked_out_ms  INTEGER CHECK (banked_out_ms >= 0),
-        -- When the "5 minutes left" alert was sent, at most once.
-        low_alert_at   INTEGER,
+        -- The last alert before a pause: the stopping point it was for (usage
+        -- ms) and the time left it warned of. A new stopping point gets its
+        -- own alerts.
+        alert_stop_ms  INTEGER,
+        alert_left_ms  INTEGER,
         -- Usage this period may reach before the next pause, as chosen on the
         -- pause screen; NULL until a choice.
         continue_until_ms INTEGER CHECK (continue_until_ms >= 0),
         CHECK (start_day < end_day),
         CHECK ((closed_at IS NULL) = (used_ms IS NULL)),
-        CHECK ((closed_at IS NULL) = (banked_out_ms IS NULL))
+        CHECK ((closed_at IS NULL) = (banked_out_ms IS NULL)),
+        CHECK ((alert_stop_ms IS NULL) = (alert_left_ms IS NULL))
       )
       """,
       "CREATE UNIQUE INDEX periods_single_open ON periods (budget_id) WHERE closed_at IS NULL",

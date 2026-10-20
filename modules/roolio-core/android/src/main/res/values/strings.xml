@@ -13,6 +13,18 @@
     <string name="roolio_overlay_off_title">Display over other apps is off</string>
     <string name="roolio_overlay_off_text">Roolio can\'t pause apps when their time runs out. Your budgets are kept. Tap to turn it back on.</string>
 
+    <string name="roolio_time_channel_name">Time alerts</string>
+    <string name="roolio_time_channel_description">Tells you 5 minutes and 1 minute before an app with a budget is paused.</string>
+    <!-- %1$d: minutes left, %2$s: the app. -->
+    <plurals name="roolio_time_left_title">
+        <item quantity="one">%1$d minute left on %2$s</item>
+        <item quantity="other">%1$d minutes left on %2$s</item>
+    </plurals>
+    <string name="roolio_time_left_text_borrow">Wrap up, or borrow more time when it runs out.</string>
+    <string name="roolio_time_left_text_last_day">Wrap up. That\'s all for today.</string>
+    <string name="roolio_time_left_text_last_week">Wrap up. That\'s all for this week.</string>
+    <string name="roolio_time_left_text_last_month">Wrap up. That\'s all for this month.</string>
+
     <!-- Pause screen. Durations read like the app: "45 min", "1h", "1h 30m". -->
     <string name="roolio_duration_minutes">%1$d min</string>
     <string name="roolio_duration_hours">%1$dh</string>
