@@ -16,12 +16,12 @@ npm run preview   # serve the built dist/
 
 ## Where things live
 
-- `src/pages/`: one file per route. `index.astro` is the homepage. `og-image.png.ts` draws the social card at build time.
+- `src/pages/`: one file per route. `index.astro` is the homepage, `privacy.astro` is the privacy policy (the URL given to Google Play), and `og-image.png.ts` draws the social card at build time.
 - `src/components/home/`: the homepage sections, in page order in `index.astro`.
 - `src/components/mock/`: HTML copies of the app's screens (budget card, usage bar, pause screen). They follow the app's components in `src/components/` at the repo root, so update them when the app's look changes.
 - `src/styles/tokens.css`: colors copied from the app's `src/theme/tokens.ts`. Keep the two in step.
 - `src/brand/mark.ts`: the time jar logo, drawn from `assets/icon-source/roolio-icon.svg`.
-- `src/config.ts`: the contact email, the Google Play link, and whether the listing is live.
+- `src/config.ts`: the developer name, the contact email, the Google Play link, and whether the listing is live.
 
 The domain is set as `site` in `astro.config.mjs`. Canonical links and the social card's URL are built from it.
 

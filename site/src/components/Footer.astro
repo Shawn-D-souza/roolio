@@ -34,6 +34,7 @@ const year = new Date().getFullYear();
 
   <div class="container legal">
     <p>© {year} Roolio</p>
+    <a href="/privacy">Privacy policy</a>
   </div>
 </footer>
 
@@ -77,13 +78,15 @@ const year = new Date().getFullYear();
   }
 
   .links a,
-  .contact {
+  .contact,
+  .legal a {
     text-decoration: none;
     text-underline-offset: 0.2em;
   }
 
   .links a:hover,
-  .contact:hover {
+  .contact:hover,
+  .legal a:hover {
     color: var(--color-on-surface);
     text-decoration: underline;
   }
@@ -97,6 +100,10 @@ const year = new Date().getFullYear();
   }
 
   .legal {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: var(--space-2) var(--space-5);
     margin-top: var(--space-6);
     padding-top: var(--space-5);
     border-top: 1px solid var(--color-border);

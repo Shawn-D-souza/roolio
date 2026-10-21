@@ -5,7 +5,7 @@ import Section from "../Section.astro";
 
 const promises: { icon: IconName; title: string; text: string }[] = [
   { icon: "user", title: "No account", text: "Open it and start. No sign-up, no email, no password." },
-  { icon: "cloudOff", title: "Nothing leaves your phone", text: "Your budgets and usage are stored on your device only." },
+  { icon: "cloudOff", title: "Never sent to us", text: "Your budgets and usage are stored on your phone, and never sent to us or anyone else." },
   { icon: "eyeOff", title: "No tracking", text: "No analytics. Your data is never collected, shared or sold." },
   { icon: "ban", title: "No ads", text: "Nothing competes for your attention inside Roolio." },
 ];
@@ -21,7 +21,7 @@ const permissions: { icon: IconName; name: string; why: string }[] = [
   id="privacy"
   eyebrow="Privacy"
   title="Your time stays on your phone."
-  intro="Roolio works entirely on your device. There's nothing to sign up for and nothing sent anywhere."
+  intro="Roolio works entirely on your device. There's nothing to sign up for, and nothing is sent to us."
   tone="tinted"
 >
   <div class="layout">
@@ -61,6 +61,7 @@ const permissions: { icon: IconName; name: string; why: string }[] = [
       <p class="never">
         Roolio doesn't use Accessibility, and never asks for your location, contacts, files, camera or microphone.
       </p>
+      <a class="policy" href="/privacy">Read the privacy policy</a>
     </div>
   </div>
 </Section>
@@ -144,6 +145,15 @@ const permissions: { icon: IconName; name: string; why: string }[] = [
     border-top: 1px solid var(--color-border);
     color: var(--color-on-surface-variant);
     font-size: var(--text-sm);
+  }
+
+  .policy {
+    display: inline-block;
+    margin-top: var(--space-4);
+    color: var(--color-primary);
+    font-size: var(--text-sm);
+    font-weight: 650;
+    text-underline-offset: 0.2em;
   }
 
   @media (min-width: 48rem) {

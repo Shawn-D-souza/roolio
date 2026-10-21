@@ -1,0 +1,259 @@
+---
+import { SITE } from "../config";
+import BaseLayout from "../layouts/BaseLayout.astro";
+
+// Change this whenever the policy's wording changes.
+const updated = new Date("2026-10-21T00:00:00Z");
+const updatedLabel = updated.toLocaleDateString("en-US", {
+  year: "numeric",
+  month: "long",
+  day: "numeric",
+  timeZone: "UTC",
+});
+
+const summary = [
+  "No account, no sign-up and no login.",
+  "Your budgets and usage are stored on your phone, and never sent to us.",
+  "No ads, no analytics and no tracking.",
+  "Roolio works offline and makes no network requests.",
+];
+---
+
+<BaseLayout
+  title="Privacy policy · Roolio"
+  description="How Roolio handles your data: it's stored on your phone and never sent to us, with no accounts, ads or analytics."
+>
+  <article class="container">
+    <div class="policy">
+      <header class="head">
+        <p class="eyebrow">Privacy</p>
+        <h1>Privacy policy</h1>
+        <p class="updated">Last updated <time datetime={updated.toISOString().slice(0, 10)}>{updatedLabel}</time></p>
+      </header>
+
+      <section class="summary" aria-labelledby="short-version">
+        <h2 id="short-version">The short version</h2>
+        <ul>
+          {summary.map((line) => <li>{line}</li>)}
+        </ul>
+      </section>
+
+      <section aria-labelledby="who">
+        <h2 id="who">Who we are</h2>
+        <p>
+          Roolio is an Android app that gives each of your apps a time budget. It's made by {SITE.developer}. In this
+          policy, "Roolio", "we" and "us" mean the app and its developer. If you have a question about your privacy, write
+          to <a href={`mailto:${SITE.contactEmail}`}>{SITE.contactEmail}</a>.
+        </p>
+      </section>
+
+      <section aria-labelledby="stored">
+        <h2 id="stored">What Roolio stores on your phone</h2>
+        <p>To do its job, Roolio keeps the following on your device:</p>
+        <ul>
+          <li>The apps you give a budget: their name, package name and icon.</li>
+          <li>Each budget's settings: its length, its period, and how much time it can bank and borrow.</li>
+          <li>
+            How long you used each budgeted app on each day, counted in whole minutes. Roolio doesn't record usage of
+            apps without a budget.
+          </li>
+          <li>Your banked and borrowed time, and the history of past periods.</li>
+          <li>Your choices in Roolio, such as whether to stop asking about notifications.</li>
+        </ul>
+        <p>
+          This data lives in Roolio's private storage, which other apps can't read. Roolio also reads the list of apps
+          installed on your phone so you can choose which ones to limit, and it doesn't keep a copy of that list.
+        </p>
+      </section>
+
+      <section aria-labelledby="collected">
+        <h2 id="collected">What we collect</h2>
+        <p>
+          Nothing. Roolio has no servers and makes no network requests. It contains no analytics, advertising, crash
+          reporting or other third-party tracking code. We never see your budgets, your usage or the apps on your phone.
+        </p>
+      </section>
+
+      <section aria-labelledby="permissions">
+        <h2 id="permissions">Permissions, and why Roolio needs them</h2>
+        <dl class="permissions">
+          <div>
+            <dt>Usage Access</dt>
+            <dd>
+              To measure how long each budgeted app is open. Android shares this with Roolio on your phone only.
+            </dd>
+          </div>
+          <div>
+            <dt>Display over other apps</dt>
+            <dd>To show the pause screen when an app's time runs out.</dd>
+          </div>
+          <div>
+            <dt>Notifications (optional)</dt>
+            <dd>
+              To warn you 5 minutes and 1 minute before an app is paused, and to show that Roolio is keeping count.
+            </dd>
+          </div>
+          <div>
+            <dt>Running in the background and at startup</dt>
+            <dd>So Roolio keeps counting while you use other apps, and starts again after your phone restarts.</dd>
+          </div>
+        </dl>
+        <p>
+          You can turn off any of these in your phone's settings at any time. Roolio doesn't use Accessibility, and never
+          asks for your location, contacts, files, camera or microphone.
+        </p>
+      </section>
+
+      <section aria-labelledby="backups">
+        <h2 id="backups">Device backups</h2>
+        <p>
+          If backup is turned on for your phone, Android may include Roolio's data in your phone's backup to your Google
+          account, as it does for most apps. That backup is run by Google under the
+          <a href="https://policies.google.com/privacy">Google Privacy Policy</a>, and it's restored when you set up a
+          new phone from it. We can't see or reach it. You can turn backup off in your phone's settings, usually under
+          Google or System, then Backup.
+        </p>
+      </section>
+
+      <section aria-labelledby="google-play">
+        <h2 id="google-play">Google Play</h2>
+        <p>
+          Roolio is downloaded from Google Play, which Google runs under its own privacy policy. Google Play gives us
+          summary numbers such as how many people installed Roolio. If you've chosen to share usage and diagnostics with
+          app developers, it also gives us crash reports that don't identify you. We use these only to fix problems
+          in Roolio.
+        </p>
+      </section>
+
+      <section aria-labelledby="website">
+        <h2 id="website">This website</h2>
+        <p>
+          This site uses no cookies, analytics or third-party services, and its fonts are served from the site itself.
+          If you choose a light or dark theme, your browser remembers it, and that choice never leaves your browser. Like
+          any website, the server that hosts it may briefly keep standard request logs, such as IP addresses, to
+          deliver the site and keep it secure.
+        </p>
+      </section>
+
+      <section aria-labelledby="sharing">
+        <h2 id="sharing">Sharing and selling</h2>
+        <p>We don't sell, rent or share your data with anyone. We don't have it to share.</p>
+      </section>
+
+      <section aria-labelledby="choices">
+        <h2 id="choices">Your choices</h2>
+        <ul>
+          <li>Change any budget in Roolio, or delete it to erase its usage and history.</li>
+          <li>Take back any permission in your phone's settings. Roolio stops pausing apps until it's granted again.</li>
+          <li>Clear Roolio's storage in your phone's settings, or uninstall Roolio, to erase all its data from your phone.</li>
+        </ul>
+      </section>
+
+      <section aria-labelledby="children">
+        <h2 id="children">Children</h2>
+        <p>Roolio collects no personal information from anyone, including children.</p>
+      </section>
+
+      <section aria-labelledby="changes">
+        <h2 id="changes">Changes to this policy</h2>
+        <p>
+          If Roolio changes how it handles data, we'll update this page and the date at the top before the change takes
+          effect.
+        </p>
+      </section>
+
+      <section aria-labelledby="contact">
+        <h2 id="contact">Contact</h2>
+        <p>
+          Questions or requests about privacy: <a href={`mailto:${SITE.contactEmail}`}>{SITE.contactEmail}</a>.
+        </p>
+      </section>
+    </div>
+  </article>
+</BaseLayout>
+
+<style>
+  .policy {
+    max-width: 44rem;
+    padding-block: var(--space-section);
+  }
+
+  .head {
+    margin-bottom: var(--space-6);
+  }
+
+  .eyebrow {
+    margin-bottom: var(--space-3);
+    color: var(--color-primary);
+    font-size: var(--text-sm);
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  h1 {
+    font-size: var(--text-3xl);
+  }
+
+  .updated {
+    margin-top: var(--space-3);
+    color: var(--color-on-surface-variant);
+    font-size: var(--text-sm);
+  }
+
+  section + section {
+    margin-top: var(--space-7);
+  }
+
+  h2 {
+    font-size: var(--text-xl);
+  }
+
+  p,
+  ul,
+  dl {
+    margin-top: var(--space-3);
+    color: var(--color-on-surface-variant);
+  }
+
+  ul {
+    display: grid;
+    gap: var(--space-2);
+    padding-left: 1.25rem;
+  }
+
+  li::marker {
+    color: var(--color-primary);
+  }
+
+  a {
+    color: var(--color-primary);
+    text-underline-offset: 0.2em;
+    overflow-wrap: anywhere;
+  }
+
+  .summary {
+    padding: var(--space-5);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl);
+    background: var(--color-surface-container);
+  }
+
+  .summary ul {
+    color: var(--color-on-surface);
+  }
+
+  .permissions {
+    display: grid;
+    gap: var(--space-4);
+  }
+
+  dt {
+    color: var(--color-on-surface);
+    font-weight: 650;
+  }
+
+  dd {
+    margin: 0;
+  }
+</style>
