@@ -33,18 +33,11 @@ export const BudgetCard = memo(function BudgetCard({
   const state = timeLeftState(budget.availableMinutes);
   const when = currentPeriodLabel(budget.period);
 
-  // What's happened this period: what's used, and any of its budget that
-  // went to paying back earlier borrowing (the rust end of the bar).
-  const activity = [
+  // What's happened this period: the total used, borrowed time included.
+  const activity =
     budget.usedMinutes > 0
       ? `${formatDuration(budget.usedMinutes)} used ${when}`
-      : `Not used ${when}`,
-    budget.repaidMinutes > 0
-      ? `${formatDuration(budget.repaidMinutes)} paid back`
-      : null,
-  ]
-    .filter(Boolean)
-    .join(" · ");
+      : `Not used ${when}`;
 
   // Low and out of time are told by an icon and words too, never by color alone.
   const amountColor =

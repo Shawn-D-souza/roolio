@@ -1,26 +1,27 @@
 ---
 // A static copy of the app's usage row (UsageBar, PeriodPips, BorrowAhead),
 // read like a battery. Left to right: banked time as one green pip per day
-// it could fill, today's own budget as an indigo bar that drains from the
-// right as it's used, any of it already gone to paying back borrowing (rust),
+// it could fill, today's budget as one full-width indigo bar that turns grey
+// from the right as it goes (first to paying back borrowing, then to use),
 // then one pip per day ahead that can be borrowed from, filled in rust by
 // how much is taken. Decorative: the text around it says the same.
 
 interface Props {
   // Each 0 to 1: how full each banked pip is.
   banked?: number[];
-  // Minutes. The bar's segments are sized by these.
-  own: number;
+  // Minutes. Today's budget, and how much of it went to paying back
+  // borrowing and to use.
+  budget: number;
   used?: number;
   repaid?: number;
   // Each 0 to 1: how much of each day ahead is already borrowed.
   ahead?: number[];
 }
 
-const { banked = [], own, used = 0, repaid = 0, ahead = [] } = Astro.props;
+const { banked = [], budget, used = 0, repaid = 0, ahead = [] } = Astro.props;
 
-const spent = own > 0 ? Math.min(used, own) / own : 0;
 const clamp = (value: number) => Math.min(Math.max(value, 0), 1);
+const spent = budget > 0 ? clamp((repaid + used) / budget) : 1;
 ---
 
 <div class="usage" aria-hidden="true">
@@ -35,15 +36,8 @@ const clamp = (value: number) => Math.min(Math.max(value, 0), 1);
       </span>
     )
   }
-  <span class="bar">
-    {
-      own > 0 && (
-        <span class="segment budget" style={`flex: ${own}; --spent: ${spent}`}>
-          <span class="spent" />
-        </span>
-      )
-    }
-    {repaid > 0 && <span class="segment repaid" style={`flex: ${repaid}`} />}
+  <span class="bar" style={`--spent: ${spent}`}>
+    <span class="spent" />
   </span>
   {
     ahead.length > 0 && (
@@ -105,24 +99,12 @@ const clamp = (value: number) => Math.min(Math.max(value, 0), 1);
   .bar {
     display: flex;
     flex: 1;
-    gap: 3px;
-    min-width: 0;
-  }
-
-  .segment {
-    display: flex;
     justify-content: flex-end;
+    min-width: 0;
     height: var(--bar-height);
     border-radius: var(--radius-full);
     overflow: hidden;
-  }
-
-  .budget {
     background: var(--color-primary);
-  }
-
-  .repaid {
-    background: var(--color-borrowed);
   }
 
   .spent {

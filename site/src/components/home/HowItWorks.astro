@@ -6,7 +6,7 @@ type Day = {
   day: string;
   value: string;
   tone?: "borrowed";
-  bar: { banked?: number[]; own: number; used?: number; repaid?: number; ahead?: number[] };
+  bar: { banked?: number[]; budget: number; used?: number; repaid?: number; ahead?: number[] };
 };
 
 const steps: { title: string; text: string; days: Day[] }[] = [
@@ -14,24 +14,24 @@ const steps: { title: string; text: string; days: Day[] }[] = [
     title: "Give each app a budget",
     text: "Choose how much time an app gets each day. Roolio counts it quietly in the background, and every budget starts fresh at midnight.",
     days: [
-      { day: "Mon", value: "1h", bar: { own: 60 } },
-      { day: "Tue", value: "1h", bar: { own: 60 } },
+      { day: "Mon", value: "1h", bar: { budget: 60 } },
+      { day: "Tue", value: "1h", bar: { budget: 60 } },
     ],
   },
   {
     title: "Unused time is banked",
     text: "Leftover time carries forward. Use 40 minutes of a 1-hour budget on Monday, and Tuesday has 1h 20m.",
     days: [
-      { day: "Mon", value: "20 min left", bar: { banked: [0], own: 60, used: 40 } },
-      { day: "Tue", value: "1h 20m", bar: { banked: [0.33], own: 60 } },
+      { day: "Mon", value: "20 min left", bar: { banked: [0], budget: 60, used: 40 } },
+      { day: "Tue", value: "1h 20m", bar: { banked: [0.33], budget: 60 } },
     ],
   },
   {
     title: "Borrow when you need it",
     text: "Need more? Keep going on tomorrow's time. Borrow 10 minutes on Monday, and Tuesday's budget pays it back: 50 minutes, automatically.",
     days: [
-      { day: "Mon", value: "10 min borrowed", tone: "borrowed", bar: { own: 60, used: 60, ahead: [0.17] } },
-      { day: "Tue", value: "50 min", bar: { own: 50, repaid: 10 } },
+      { day: "Mon", value: "10 min borrowed", tone: "borrowed", bar: { budget: 60, used: 60, ahead: [0.17] } },
+      { day: "Tue", value: "50 min", bar: { budget: 60, repaid: 10 } },
     ],
   },
 ];

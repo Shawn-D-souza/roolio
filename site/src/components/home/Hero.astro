@@ -37,11 +37,11 @@ import Phone from "../mock/Phone.astro";
               color="#5B6CFF"
               left="0 min"
               state="out"
-              activity="30 min used today · 10 min paid back"
+              activity="30 min used today"
               bankedLabel="Nothing banked yet"
               aheadLabel="10 min borrowed"
               aheadTaken
-              bar={{ banked: [0], own: 20, used: 20, repaid: 10, ahead: [0.33, 0] }}
+              bar={{ banked: [0], budget: 30, used: 20, repaid: 10, ahead: [0.33, 0] }}
             />
             <BudgetCard
               app="Streamly"
@@ -51,7 +51,7 @@ import Phone from "../mock/Phone.astro";
               activity="41 min used today"
               bankedLabel="Nothing banked yet"
               aheadLabel="1 day to borrow"
-              bar={{ banked: [0], own: 45, used: 41, ahead: [0] }}
+              bar={{ banked: [0], budget: 45, used: 41, ahead: [0] }}
             />
             <BudgetCard
               app="Chirp"
@@ -60,7 +60,7 @@ import Phone from "../mock/Phone.astro";
               activity="25 min used today"
               bankedLabel="40 min banked"
               aheadLabel="1 day to borrow"
-              bar={{ banked: [0.67], own: 60, used: 25, ahead: [0] }}
+              bar={{ banked: [0.67], budget: 60, used: 25, ahead: [0] }}
             />
           </div>
         </div>
