@@ -105,6 +105,17 @@ The developer builds the app (Gradle/Expo) and runs lint and typecheck themselve
 Use EAS to build, sign, and submit the app in the cloud (`eas build`, `eas submit`) and to ship over-the-air updates (`eas update`) — no local Xcode or Android Studio required. Run EAS CLI as `bunx eas-cli <command>` in Bun projects, or `npx eas-cli@latest <command>` otherwise; substitute that for bare `eas` in docs examples.
 Docs: https://docs.expo.dev/eas/index.md
 
+The developer builds Google Play releases locally:
+
+```bash
+EAS_LOCAL_BUILD_WORKINGDIR=$HOME/.eas-build npx eas-cli@latest build --platform android --profile production --local
+```
+
+- `/tmp` is a small RAM disk on the developer's machine, so the working directory is in the home folder instead.
+- The build writes `build-<timestamp>.aab` to the project root (ignored by git). That file is what gets uploaded to Play Console.
+- EAS keeps the upload key and the version code (`appVersionSource: remote`). Each production build raises `versionCode` by itself. `version` in `app.json` is the version users see, and it's changed by hand.
+- The `production` profile builds native code only for `armeabi-v7a` and `arm64-v8a`, which halves build time. Deleting its `env` block brings back `x86` and `x86_64`.
+
 ## Rules
 
 - If `ios/` and `android/` directories do not exist, they are generated (Continuous Native Generation). Never create or edit them by hand — configure native behavior in `app.json` and config plugins.
@@ -113,7 +124,11 @@ Docs: https://docs.expo.dev/eas/index.md
 
 ## Code conventions
 
-- Write every change to production quality. The app hasn't shipped yet, but the code in this repo is the code that will ship.
+- Write every change to production quality. Roolio is on Google Play, and any commit can go out to the people using it.
 - Don't mention the app's release status in code or comments: no "unreleased", "not shipped yet", "temporary", "for testing" or similar notes.
-- Nothing has shipped, so there's nothing to stay compatible with. Change or remove earlier code, schema and migrations directly (for example, edit a database migration in place) instead of adding compatibility layers or new migrations.
+- Updates install over existing data, so anything Roolio stores on the phone has to carry over:
+  - Database: never edit a migration in `RoolioDatabase.kt` once a Play build has it. Append a new one, and check it against a database made by the previous build.
+  - Saved preferences (such as the notifications step's "Don't ask again" in `roolio-permissions`): rename or remove a key only with code that moves or clears the old one.
+  - Notification channels: Android keeps a channel's importance and sound from when it was first created, so changing them needs a new channel ID, and the old channel deleted.
+- Code that ships together (JS, the bridge and Kotlin) needs no compatibility layers. Change or remove it directly.
 - Don't reference the PRD (`Roolio_PRD.md`) or its section numbers in code or comments. Comments should explain the code on their own.

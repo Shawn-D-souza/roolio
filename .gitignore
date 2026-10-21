@@ -41,3 +41,6 @@ yarn-error.*
 /android
 modules/*/android/build/
 modules/*/android/.cxx/
+# build outputs
+*.aab
+*.apk
