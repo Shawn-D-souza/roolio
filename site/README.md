@@ -31,6 +31,8 @@ Set `PLAY_STORE.live` to `true` in `src/config.ts`. The "Coming soon" labels the
 
 ## Deploying
 
+On Netlify, set only the base directory to `site`. `netlify.toml` sets the rest.
+
 Any static host works. Use these settings:
 
 | Setting | Value |
