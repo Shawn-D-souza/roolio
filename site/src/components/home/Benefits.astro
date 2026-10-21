@@ -1,0 +1,100 @@
+---
+import Icon from "../Icon.astro";
+import type { IconName } from "../icons";
+import Section from "../Section.astro";
+
+const benefits: { icon: IconName; title: string; text: string }[] = [
+  {
+    icon: "heart",
+    title: "Rewards your good days",
+    text: "Every minute you don't use is saved for later, up to the limit you set.",
+  },
+  {
+    icon: "shield",
+    title: "Flexible, with no loopholes",
+    text: "Borrowing is capped and paid back automatically, so one long evening never turns into a habit.",
+  },
+  {
+    icon: "eye",
+    title: "Always know where you stand",
+    text: "Each app shows the time you have left, what's banked and what's borrowed, at a glance.",
+  },
+  {
+    icon: "bolt",
+    title: "Changes apply right away",
+    text: "Edit a budget and it applies now. Past days are never rewritten.",
+  },
+  {
+    icon: "sliders",
+    title: "Your rules, app by app",
+    text: "Bank up to 7 days of time and borrow up to 7 days ahead, or turn either off. Each app is set on its own.",
+  },
+  {
+    icon: "moon",
+    title: "Calm by design",
+    text: "No streaks, no scores, no guilt. Just a quiet nudge when it's time to stop.",
+  },
+];
+---
+
+<Section id="why-roolio" eyebrow="Why Roolio" title="Built to be fair to you.">
+  <ul role="list" class="grid">
+    {
+      benefits.map((benefit) => (
+        <li class="item reveal">
+          <span class="icon">
+            <Icon name={benefit.icon} />
+          </span>
+          <h3>{benefit.title}</h3>
+          <p>{benefit.text}</p>
+        </li>
+      ))
+    }
+  </ul>
+</Section>
+
+<style>
+  .grid {
+    display: grid;
+    gap: var(--space-4);
+  }
+
+  .item {
+    padding: var(--space-5);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background: var(--card-bg);
+  }
+
+  .icon {
+    display: inline-grid;
+    place-items: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    margin-bottom: var(--space-4);
+    border-radius: var(--radius-md);
+    background: var(--color-primary-container);
+    color: var(--color-on-primary-container);
+  }
+
+  h3 {
+    font-size: var(--text-lg);
+  }
+
+  .item p {
+    margin-top: var(--space-2);
+    color: var(--color-on-surface-variant);
+  }
+
+  @media (min-width: 40rem) {
+    .grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (min-width: 64rem) {
+    .grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+</style>

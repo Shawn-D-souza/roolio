@@ -1,0 +1,111 @@
+---
+import Icon from "../Icon.astro";
+import Section from "../Section.astro";
+
+const questions = [
+  {
+    question: "What happens when an app's time runs out?",
+    answer:
+      "Roolio takes you back to your home screen and shows a pause screen. You can stop for now, take 5 more minutes, or borrow from tomorrow if your borrowing limit allows. You'll get a heads-up 5 minutes and 1 minute before.",
+  },
+  {
+    question: "How does borrowed time get paid back?",
+    answer:
+      "It comes out of tomorrow's budget, and anything tomorrow can't cover moves on to the day after. You choose how many days ahead each app can borrow from. Once that's used up, the app stays paused until the next day.",
+  },
+  {
+    question: "Can I turn off banking or borrowing?",
+    answer:
+      "Yes, for each app on its own. You choose how many days of unused time it can bank, and how many days ahead it can borrow from, anywhere from 0 to 7. Both start at 1, and 0 turns them off.",
+  },
+  {
+    question: "Which permissions does Roolio need, and why?",
+    answer:
+      "Usage Access, to measure how long each app is open, and Display over other apps, to show the pause screen. Notifications are optional and only used for time alerts. Roolio doesn't use Accessibility.",
+  },
+  {
+    question: "Does Roolio need the internet?",
+    answer:
+      "No. Everything works offline, and your budgets and usage never leave your phone. There's no account to create.",
+  },
+  {
+    question: "Roolio stopped working on my phone. Why?",
+    answer:
+      "Some phones, including many from Xiaomi, Oppo, Realme, Vivo and Huawei, stop background apps to save battery. Allow Roolio to run without battery restrictions in your phone's settings, and it will keep counting.",
+  },
+  {
+    question: "Is there an iPhone version?",
+    answer: "Not yet. Roolio is made for Android phones.",
+  },
+];
+---
+
+<Section id="faq" eyebrow="FAQ" title="Questions, answered.">
+  <div class="list">
+    {
+      questions.map((item) => (
+        <details class="item">
+          <summary>
+            <span>{item.question}</span>
+            <Icon name="chevronDown" size={22} class="chevron" />
+          </summary>
+          <p>{item.answer}</p>
+        </details>
+      ))
+    }
+  </div>
+</Section>
+
+<style>
+  .list {
+    max-width: 48rem;
+    border-top: 1px solid var(--color-border);
+  }
+
+  .item {
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  summary {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--space-4);
+    padding-block: var(--space-5);
+    font-size: var(--text-lg);
+    font-weight: 650;
+    line-height: 1.35;
+    cursor: pointer;
+    list-style: none;
+  }
+
+  summary::-webkit-details-marker {
+    display: none;
+  }
+
+  summary:hover {
+    color: var(--color-primary);
+  }
+
+  summary :global(.chevron) {
+    flex: none;
+    color: var(--color-on-surface-variant);
+    transition: transform 200ms ease;
+  }
+
+  .item[open] summary :global(.chevron) {
+    transform: rotate(180deg);
+  }
+
+  .item p {
+    max-width: 42rem;
+    padding-bottom: var(--space-5);
+    color: var(--color-on-surface-variant);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    summary :global(.chevron) {
+      transition: none;
+    }
+  }
+</style>

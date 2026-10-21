@@ -1,0 +1,58 @@
+---
+import { PLAY_STORE } from "../../config";
+import Logo from "../Logo.astro";
+import PlayButton from "../PlayButton.astro";
+---
+
+<section id="get-roolio" class="band" aria-labelledby="get-roolio-title">
+  <div class="container inner reveal">
+    <Logo size={72} class="mark" />
+    <h2 id="get-roolio-title">Spend your time on purpose.</h2>
+    <p>
+      {
+        PLAY_STORE.live
+          ? "Roolio is free to download on Google Play."
+          : "Roolio is coming soon to Google Play. Set it up in a minute, and let your budgets do the rest."
+      }
+    </p>
+    <PlayButton tone="inverse" />
+  </div>
+</section>
+
+<style>
+  .band {
+    padding-block: var(--space-section);
+    background:
+      radial-gradient(80% 120% at 50% 0%, rgb(201 197 255 / 0.18), transparent 70%),
+      var(--brand-indigo);
+    color: #ffffff;
+  }
+
+  .inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .inner :global(.mark) {
+    margin-bottom: var(--space-5);
+    border-radius: 18px;
+    box-shadow: 0 0 0 1px rgb(201 197 255 / 0.25), 0 16px 40px rgb(0 0 0 / 0.3);
+  }
+
+  h2 {
+    font-size: var(--text-2xl);
+  }
+
+  p {
+    max-width: 30rem;
+    margin-block: var(--space-4) var(--space-6);
+    color: var(--brand-lilac);
+    font-size: var(--text-lg);
+  }
+
+  .band :global(:focus-visible) {
+    outline-color: #ffffff;
+  }
+</style>

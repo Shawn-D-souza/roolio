@@ -1,0 +1,65 @@
+---
+interface Props {
+  id: string;
+  eyebrow: string;
+  title: string;
+  intro?: string;
+  // Sections alternate between plain and tinted, so each one reads as its own
+  // band. Cards inside take the opposite surface, so they always stand out.
+  tone?: "plain" | "tinted";
+}
+
+const { id, eyebrow, title, intro, tone = "plain" } = Astro.props;
+---
+
+<section id={id} class:list={["section", tone]} aria-labelledby={`${id}-title`}>
+  <div class="container">
+    <header class="head reveal">
+      <p class="eyebrow">{eyebrow}</p>
+      <h2 id={`${id}-title`}>{title}</h2>
+      {intro && <p class="intro">{intro}</p>}
+    </header>
+    <slot />
+  </div>
+</section>
+
+<style>
+  .section {
+    padding-block: var(--space-section);
+    border-top: 1px solid var(--color-border);
+  }
+
+  .plain {
+    --card-bg: var(--color-surface-container);
+    background: var(--color-background);
+  }
+
+  .tinted {
+    --card-bg: var(--color-surface);
+    background: var(--color-surface-container);
+  }
+
+  .head {
+    max-width: 40rem;
+    margin-bottom: var(--space-section-head);
+  }
+
+  .eyebrow {
+    margin-bottom: var(--space-3);
+    color: var(--color-primary);
+    font-size: var(--text-sm);
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  h2 {
+    font-size: var(--text-2xl);
+  }
+
+  .intro {
+    margin-top: var(--space-4);
+    color: var(--color-on-surface-variant);
+    font-size: var(--text-lg);
+  }
+</style>

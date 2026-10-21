@@ -1,0 +1,216 @@
+---
+import Section from "../Section.astro";
+import UsageBar from "../mock/UsageBar.astro";
+
+type Day = {
+  day: string;
+  value: string;
+  tone?: "borrowed";
+  bar: { banked?: number[]; own: number; used?: number; repaid?: number; ahead?: number[] };
+};
+
+const steps: { title: string; text: string; days: Day[] }[] = [
+  {
+    title: "Give each app a budget",
+    text: "Choose how much time an app gets each day. Roolio counts it quietly in the background, and every budget starts fresh at midnight.",
+    days: [
+      { day: "Mon", value: "1h", bar: { own: 60 } },
+      { day: "Tue", value: "1h", bar: { own: 60 } },
+    ],
+  },
+  {
+    title: "Unused time is banked",
+    text: "Leftover time carries forward. Use 40 minutes of a 1-hour budget on Monday, and Tuesday has 1h 20m.",
+    days: [
+      { day: "Mon", value: "20 min left", bar: { banked: [0], own: 60, used: 40 } },
+      { day: "Tue", value: "1h 20m", bar: { banked: [0.33], own: 60 } },
+    ],
+  },
+  {
+    title: "Borrow when you need it",
+    text: "Need more? Keep going on tomorrow's time. Borrow 10 minutes on Monday, and Tuesday's budget pays it back: 50 minutes, automatically.",
+    days: [
+      { day: "Mon", value: "10 min borrowed", tone: "borrowed", bar: { own: 60, used: 60, ahead: [0.17] } },
+      { day: "Tue", value: "50 min", bar: { own: 50, repaid: 10 } },
+    ],
+  },
+];
+
+const legend = [
+  { label: "Today's budget", kind: "budget" },
+  { label: "Banked", kind: "banked" },
+  { label: "Borrowed", kind: "borrowed" },
+];
+---
+
+<Section
+  id="how-it-works"
+  eyebrow="How it works"
+  title="Budget, bank, borrow."
+  intro="Three simple ideas that keep your limits honest without making them rigid. You decide how far each one goes."
+>
+  <ol role="list" class="steps">
+    {
+      steps.map((step, index) => (
+        <li class="step reveal">
+          <span class="number" aria-hidden="true">
+            {index + 1}
+          </span>
+          <h3>{step.title}</h3>
+          <p>{step.text}</p>
+          <div class="demo" aria-hidden="true">
+            {step.days.map((row) => (
+              <div class="demo-row">
+                <span class="day">{row.day}</span>
+                <span class="demo-bar">
+                  <UsageBar {...row.bar} />
+                </span>
+                <span class:list={["value", row.tone]}>{row.value}</span>
+              </div>
+            ))}
+          </div>
+        </li>
+      ))
+    }
+  </ol>
+
+  <ul role="list" class="legend reveal" aria-label="Colors in Roolio's bars">
+    {
+      legend.map((item) => (
+        <li>
+          <span class:list={["swatch", item.kind]} />
+          {item.label}
+        </li>
+      ))
+    }
+  </ul>
+
+  <p class="footnote reveal">
+    No more raising a limit and forgetting to lower it. The give is built in, and it always balances out.
+  </p>
+</Section>
+
+<style>
+  .steps {
+    display: grid;
+    gap: var(--space-4);
+    padding: 0;
+  }
+
+  .step {
+    display: flex;
+    flex-direction: column;
+    padding: var(--space-5);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background: var(--card-bg);
+    box-shadow: var(--shadow-soft);
+  }
+
+  .number {
+    display: grid;
+    place-items: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    margin-bottom: var(--space-4);
+    border-radius: var(--radius-full);
+    background: var(--color-primary);
+    color: var(--color-on-primary);
+    font-weight: 700;
+  }
+
+  h3 {
+    font-size: var(--text-xl);
+  }
+
+  .step p {
+    margin-top: var(--space-2);
+    color: var(--color-on-surface-variant);
+  }
+
+  .demo {
+    display: grid;
+    gap: var(--space-3);
+    margin-top: auto;
+    padding-top: var(--space-5);
+  }
+
+  .demo-row {
+    display: grid;
+    grid-template-columns: 2.25rem 1fr auto;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    border: 1px solid var(--color-outline-variant);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    font-size: var(--text-xs);
+  }
+
+  .day {
+    color: var(--color-on-surface-variant);
+    font-weight: 600;
+  }
+
+  .demo-bar {
+    min-width: 0;
+  }
+
+  .value {
+    font-weight: 650;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .value.borrowed {
+    color: var(--color-borrowed);
+  }
+
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--space-3) var(--space-6);
+    margin-top: var(--space-6);
+    color: var(--color-on-surface-variant);
+    font-size: var(--text-sm);
+  }
+
+  .legend li {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .swatch {
+    width: 1.5rem;
+    height: 0.625rem;
+    border-radius: var(--radius-full);
+  }
+
+  .swatch.budget {
+    background: var(--color-primary);
+  }
+
+  .swatch.banked {
+    background: var(--color-banked);
+  }
+
+  .swatch.borrowed {
+    background: var(--color-borrowed);
+  }
+
+  .footnote {
+    max-width: 36rem;
+    margin: var(--space-6) auto 0;
+    color: var(--color-on-surface-variant);
+    font-size: var(--text-lg);
+    text-align: center;
+  }
+
+  @media (min-width: 64rem) {
+    .steps {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+</style>

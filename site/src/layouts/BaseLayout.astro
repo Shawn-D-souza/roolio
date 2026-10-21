@@ -1,0 +1,104 @@
+---
+import { Font } from "astro:assets";
+import Footer from "../components/Footer.astro";
+import Header from "../components/Header.astro";
+import { SITE } from "../config";
+import "../styles/tokens.css";
+import "../styles/global.css";
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const { title = SITE.title, description = SITE.description } = Astro.props;
+
+const canonical = new URL(Astro.url.pathname, Astro.site);
+const socialImage = new URL("/og-image.png", Astro.site);
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#FBF9FF" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#121218" media="(prefers-color-scheme: dark)" />
+
+    <script is:inline>
+      // The theme: the system's until the reader picks one with the toggle,
+      // then theirs. Inline and early, so a saved theme applies before the
+      // first paint.
+      (() => {
+        const KEY = "roolio-theme";
+        const BACKGROUND = { light: "#FBF9FF", dark: "#121218" };
+        const root = document.documentElement;
+        const systemDark = window.matchMedia("(prefers-color-scheme: dark)");
+
+        const current = () => root.dataset.theme ?? (systemDark.matches ? "dark" : "light");
+
+        const syncToggles = () => {
+          const dark = String(current() === "dark");
+          for (const toggle of document.querySelectorAll("[data-theme-toggle]")) {
+            toggle.setAttribute("aria-pressed", dark);
+          }
+        };
+
+        const apply = (theme) => {
+          root.dataset.theme = theme;
+          for (const meta of document.querySelectorAll('meta[name="theme-color"]')) {
+            meta.content = BACKGROUND[theme];
+          }
+          syncToggles();
+        };
+
+        let saved = null;
+        try {
+          saved = localStorage.getItem(KEY);
+        } catch {}
+        if (saved === "light" || saved === "dark") apply(saved);
+
+        document.addEventListener("DOMContentLoaded", syncToggles);
+        systemDark.addEventListener("change", syncToggles);
+
+        document.addEventListener("click", (event) => {
+          if (!(event.target instanceof Element) || !event.target.closest("[data-theme-toggle]")) return;
+          const next = current() === "dark" ? "light" : "dark";
+          apply(next);
+          try {
+            localStorage.setItem(KEY, next);
+          } catch {}
+        });
+      })();
+    </script>
+
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={SITE.name} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={socialImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Roolio: app time you can bank and borrow." />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <Font cssVariable="--font-figtree" preload />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <Header />
+    <main id="main">
+      <slot />
+    </main>
+    <Footer />
+  </body>
+</html>

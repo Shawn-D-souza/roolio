@@ -1,0 +1,103 @@
+---
+// A simple Android phone frame for app mock-ups. The whole phone is one image
+// to screen readers, described by `label`; what's drawn inside is hidden.
+interface Props {
+  label: string;
+  // "app" is Roolio's own screen. "home" is a launcher with a wallpaper,
+  // for the pause screen.
+  screen?: "app" | "home";
+  class?: string;
+}
+
+const { label, screen = "app", class: className } = Astro.props;
+---
+
+<div class:list={["phone", className]} role="img" aria-label={label}>
+  <div class:list={["screen", screen]}>
+    <div class="status" aria-hidden="true">
+      <span>9:41</span>
+      <span class="status-icons">
+        <span class="signal"></span>
+        <span class="battery"></span>
+      </span>
+    </div>
+    <div class="content">
+      <slot />
+    </div>
+  </div>
+</div>
+
+<style>
+  .phone {
+    width: min(100%, 20rem);
+    padding: 10px;
+    border-radius: 44px;
+    background: var(--device-bezel);
+    /* The ring keeps the black frame visible on a dark page. */
+    box-shadow:
+      0 0 0 1px var(--color-border),
+      var(--shadow-lifted);
+  }
+
+  .screen {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-height: 32rem;
+    border-radius: 34px;
+    overflow: hidden;
+    background: var(--color-background);
+    color: var(--color-on-surface);
+  }
+
+  /* A soft wallpaper in the theme's own hues. */
+  .home {
+    background:
+      radial-gradient(120% 80% at 10% 0%, color-mix(in srgb, var(--color-primary) 55%, transparent), transparent 60%),
+      radial-gradient(90% 70% at 100% 100%, color-mix(in srgb, var(--color-banked) 45%, transparent), transparent 60%),
+      var(--color-primary-container);
+  }
+
+  .status {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 22px 4px;
+    font-size: 12px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .home .status {
+    color: var(--color-on-primary-container);
+  }
+
+  .status-icons {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .signal {
+    width: 14px;
+    height: 10px;
+    background: currentColor;
+    clip-path: polygon(100% 0, 100% 100%, 0 100%);
+  }
+
+  .battery {
+    width: 18px;
+    height: 9px;
+    border: 1.5px solid currentColor;
+    border-radius: 3px;
+    background: linear-gradient(90deg, currentColor 70%, transparent 70%) content-box;
+    padding: 1px;
+  }
+
+  .content {
+    position: relative;
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+  }
+</style>

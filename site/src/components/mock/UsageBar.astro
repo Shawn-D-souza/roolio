@@ -1,0 +1,134 @@
+---
+// A static copy of the app's usage row (UsageBar, PeriodPips, BorrowAhead),
+// read like a battery. Left to right: banked time as one green pip per day
+// it could fill, today's own budget as an indigo bar that drains from the
+// right as it's used, any of it already gone to paying back borrowing (rust),
+// then one pip per day ahead that can be borrowed from, filled in rust by
+// how much is taken. Decorative: the text around it says the same.
+
+interface Props {
+  // Each 0 to 1: how full each banked pip is.
+  banked?: number[];
+  // Minutes. The bar's segments are sized by these.
+  own: number;
+  used?: number;
+  repaid?: number;
+  // Each 0 to 1: how much of each day ahead is already borrowed.
+  ahead?: number[];
+}
+
+const { banked = [], own, used = 0, repaid = 0, ahead = [] } = Astro.props;
+
+const spent = own > 0 ? Math.min(used, own) / own : 0;
+const clamp = (value: number) => Math.min(Math.max(value, 0), 1);
+---
+
+<div class="usage" aria-hidden="true">
+  {
+    banked.length > 0 && (
+      <span class="pips">
+        {banked.map((fill) => (
+          <span class:list={["pip", "banked", { filled: fill > 0 }]} style={`--fill: ${clamp(fill)}`}>
+            <span class="fill" />
+          </span>
+        ))}
+      </span>
+    )
+  }
+  <span class="bar">
+    {
+      own > 0 && (
+        <span class="segment budget" style={`flex: ${own}; --spent: ${spent}`}>
+          <span class="spent" />
+        </span>
+      )
+    }
+    {repaid > 0 && <span class="segment repaid" style={`flex: ${repaid}`} />}
+  </span>
+  {
+    ahead.length > 0 && (
+      <span class="pips">
+        {ahead.map((fill) => (
+          <span class:list={["pip", "borrowed", { filled: fill > 0 }]} style={`--fill: ${clamp(fill)}`}>
+            <span class="fill" />
+          </span>
+        ))}
+      </span>
+    )
+  }
+</div>
+
+<style>
+  .usage {
+    --bar-height: 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .pips {
+    display: flex;
+    gap: 4px;
+  }
+
+  .pip {
+    display: block;
+    width: 22px;
+    height: var(--bar-height);
+    border: 1.5px solid var(--color-outline);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+  }
+
+  .pip .fill {
+    display: block;
+    width: calc(var(--fill) * 100%);
+    height: 100%;
+  }
+
+  .banked.filled {
+    border-color: var(--color-banked);
+  }
+
+  .banked .fill {
+    background: var(--color-banked);
+  }
+
+  .borrowed.filled {
+    border-color: var(--color-borrowed);
+  }
+
+  .borrowed .fill {
+    background: var(--color-borrowed);
+  }
+
+  .bar {
+    display: flex;
+    flex: 1;
+    gap: 3px;
+    min-width: 0;
+  }
+
+  .segment {
+    display: flex;
+    justify-content: flex-end;
+    height: var(--bar-height);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+  }
+
+  .budget {
+    background: var(--color-primary);
+  }
+
+  .repaid {
+    background: var(--color-borrowed);
+  }
+
+  .spent {
+    display: block;
+    width: calc(var(--spent) * 100%);
+    height: 100%;
+    background: var(--color-outline-variant);
+  }
+</style>

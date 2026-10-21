@@ -1,0 +1,63 @@
+---
+import Icon from "./Icon.astro";
+
+// Switches between light and dark. The page follows the system theme until
+// this is pressed; the choice is then remembered. The script that does the
+// work is inline in BaseLayout's <head>, so a saved theme applies before the
+// first paint and the page never flashes the wrong colors.
+---
+
+<button class="toggle" type="button" data-theme-toggle aria-label="Dark theme" aria-pressed="false">
+  <Icon name="moon" size={20} class="moon" />
+  <Icon name="sun" size={20} class="sun" />
+</button>
+
+<style>
+  .toggle {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 2.5rem;
+    height: 2.5rem;
+    padding: 0;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-full);
+    background: transparent;
+    color: var(--color-on-surface);
+    cursor: pointer;
+    transition: background-color 160ms ease;
+  }
+
+  .toggle:hover {
+    background: var(--color-surface-container);
+  }
+
+  /* The icon shows the theme a press switches to. */
+  .toggle :global(.sun) {
+    display: none;
+  }
+
+  :global(:root[data-theme="dark"]) .toggle :global(.moon) {
+    display: none;
+  }
+
+  :global(:root[data-theme="dark"]) .toggle :global(.sun) {
+    display: block;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :global(:root:not([data-theme="light"])) .toggle :global(.moon) {
+      display: none;
+    }
+
+    :global(:root:not([data-theme="light"])) .toggle :global(.sun) {
+      display: block;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .toggle {
+      transition: none;
+    }
+  }
+</style>

@@ -1,0 +1,114 @@
+---
+import { NAV } from "../config";
+import Logo from "./Logo.astro";
+import ThemeToggle from "./ThemeToggle.astro";
+---
+
+<header class="site-header">
+  <div class="container bar">
+    <a class="brand" href="/" aria-label="Roolio home">
+      <Logo size={32} />
+      <span class="wordmark">Roolio</span>
+    </a>
+
+    <nav aria-label="Main">
+      <ul role="list" class="links">
+        {NAV.map((item) => (
+          <li>
+            <a href={item.href}>{item.label}</a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+
+    <div class="actions">
+      <ThemeToggle />
+      <a class="cta" href="/#get-roolio">Get Roolio</a>
+    </div>
+  </div>
+</header>
+
+<style>
+  .site-header {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: var(--color-background);
+    border-bottom: 1px solid var(--color-border);
+    box-shadow: 0 1px 12px light-dark(rgb(43 38 112 / 0.06), rgb(0 0 0 / 0.3));
+  }
+
+  .bar {
+    display: flex;
+    align-items: center;
+    gap: var(--space-5);
+    height: var(--header-height);
+  }
+
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    text-decoration: none;
+    margin-right: auto;
+  }
+
+  .wordmark {
+    font-size: 1.25rem;
+    font-weight: 750;
+    letter-spacing: -0.02em;
+  }
+
+  /* On phones the page itself is the menu: the brand, the theme and the
+     action. */
+  nav {
+    display: none;
+  }
+
+  .links {
+    display: flex;
+    gap: var(--space-1);
+  }
+
+  .actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .links a,
+  .cta {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.5rem;
+    padding-inline: var(--space-4);
+    border-radius: var(--radius-full);
+    font-size: var(--text-sm);
+    font-weight: 600;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+
+  .links a {
+    color: var(--color-on-surface-variant);
+    transition:
+      background-color 160ms ease,
+      color 160ms ease;
+  }
+
+  .links a:hover {
+    background: var(--color-surface-container);
+    color: var(--color-on-surface);
+  }
+
+  .cta {
+    background: var(--color-primary);
+    color: var(--color-on-primary);
+  }
+
+  @media (min-width: 48rem) {
+    nav {
+      display: block;
+    }
+  }
+</style>

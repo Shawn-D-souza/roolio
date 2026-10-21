@@ -1,0 +1,166 @@
+---
+import Icon from "../Icon.astro";
+import type { IconName } from "../icons";
+import Section from "../Section.astro";
+
+const promises: { icon: IconName; title: string; text: string }[] = [
+  { icon: "user", title: "No account", text: "Open it and start. No sign-up, no email, no password." },
+  { icon: "cloudOff", title: "Nothing leaves your phone", text: "Your budgets and usage are stored on your device only." },
+  { icon: "eyeOff", title: "No tracking", text: "No analytics. Your data is never collected, shared or sold." },
+  { icon: "ban", title: "No ads", text: "Nothing competes for your attention inside Roolio." },
+];
+
+const permissions: { icon: IconName; name: string; why: string }[] = [
+  { icon: "chart", name: "Usage Access", why: "To measure how long each app is open." },
+  { icon: "layers", name: "Display over other apps", why: "To show the pause screen when time runs out." },
+  { icon: "bell", name: "Notifications", why: "For a heads-up before an app is paused. Optional." },
+];
+---
+
+<Section
+  id="privacy"
+  eyebrow="Privacy"
+  title="Your time stays on your phone."
+  intro="Roolio works entirely on your device. There's nothing to sign up for and nothing sent anywhere."
+  tone="tinted"
+>
+  <div class="layout">
+    <ul role="list" class="promises">
+      {
+        promises.map((promise) => (
+          <li class="promise reveal">
+            <span class="icon">
+              <Icon name={promise.icon} />
+            </span>
+            <div>
+              <h3>{promise.title}</h3>
+              <p>{promise.text}</p>
+            </div>
+          </li>
+        ))
+      }
+    </ul>
+
+    <div class="permissions reveal">
+      <h3>Only three permissions</h3>
+      <ul role="list">
+        {
+          permissions.map((permission) => (
+            <li>
+              <span class="icon small">
+                <Icon name={permission.icon} size={20} />
+              </span>
+              <div>
+                <p class="name">{permission.name}</p>
+                <p class="why">{permission.why}</p>
+              </div>
+            </li>
+          ))
+        }
+      </ul>
+      <p class="never">
+        Roolio doesn't use Accessibility, and never asks for your location, contacts, files, camera or microphone.
+      </p>
+    </div>
+  </div>
+</Section>
+
+<style>
+  .layout {
+    display: grid;
+    gap: var(--space-6);
+    align-items: start;
+  }
+
+  .promises {
+    display: grid;
+    gap: var(--space-5);
+  }
+
+  .promise {
+    display: flex;
+    gap: var(--space-4);
+  }
+
+  .icon {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 3rem;
+    height: 3rem;
+    border-radius: var(--radius-md);
+    background: var(--color-primary-container);
+    color: var(--color-on-primary-container);
+  }
+
+  .icon.small {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: var(--radius-sm);
+    background: var(--color-surface-container-highest);
+    color: var(--color-on-surface);
+  }
+
+  h3 {
+    font-size: var(--text-lg);
+  }
+
+  .promise p {
+    margin-top: var(--space-1);
+    color: var(--color-on-surface-variant);
+  }
+
+  .permissions {
+    padding: var(--space-5);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl);
+    background: var(--card-bg);
+  }
+
+  .permissions ul {
+    display: grid;
+    gap: var(--space-4);
+    margin-top: var(--space-5);
+  }
+
+  .permissions li {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+  }
+
+  .name {
+    font-weight: 650;
+  }
+
+  .why {
+    color: var(--color-on-surface-variant);
+    font-size: var(--text-sm);
+  }
+
+  .never {
+    margin-top: var(--space-5);
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--color-border);
+    color: var(--color-on-surface-variant);
+    font-size: var(--text-sm);
+  }
+
+  @media (min-width: 48rem) {
+    .promises {
+      grid-template-columns: repeat(2, 1fr);
+      gap: var(--space-6) var(--space-5);
+    }
+  }
+
+  @media (min-width: 64rem) {
+    .layout {
+      grid-template-columns: 1.3fr 1fr;
+      gap: var(--space-8);
+    }
+
+    .promises {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

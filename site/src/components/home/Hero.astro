@@ -1,0 +1,223 @@
+---
+import Icon from "../Icon.astro";
+import PlayButton from "../PlayButton.astro";
+import BudgetCard from "../mock/BudgetCard.astro";
+import Phone from "../mock/Phone.astro";
+---
+
+<section class="hero" aria-labelledby="hero-title">
+  <div class="container layout">
+    <div class="copy">
+      <h1 id="hero-title">
+        App time you can <span class="word bank">bank</span> and <span class="word borrow">borrow</span>.
+      </h1>
+      <p class="lead">
+        Give each app a daily timer. Minutes you don't use are banked for later, and when you need a little more,
+        you can borrow from tomorrow, up to a limit you choose.
+      </p>
+      <div class="actions">
+        <PlayButton />
+        <ul role="list" class="perks">
+          <li><Icon name="check" size={18} />Free to download</li>
+          <li><Icon name="check" size={18} />No account needed</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="visual">
+      <Phone
+        class="hero-phone"
+        label="Roolio's home screen. Each app shows its time left today, its banked time, and any time borrowed from tomorrow."
+      >
+        <div class="app-screen">
+          <p class="screen-title">Budgets</p>
+          <div class="cards">
+            <BudgetCard
+              app="Puzzle Rush"
+              color="#5B6CFF"
+              left="0 min"
+              state="out"
+              activity="30 min used today · 10 min paid back"
+              bankedLabel="Nothing banked yet"
+              aheadLabel="10 min borrowed"
+              aheadTaken
+              bar={{ banked: [0], own: 20, used: 20, repaid: 10, ahead: [0.33, 0] }}
+            />
+            <BudgetCard
+              app="Streamly"
+              color="#E2762B"
+              left="4 min"
+              state="low"
+              activity="41 min used today"
+              bankedLabel="Nothing banked yet"
+              aheadLabel="1 day to borrow"
+              bar={{ banked: [0], own: 45, used: 41, ahead: [0] }}
+            />
+            <BudgetCard
+              app="Chirp"
+              color="#13958F"
+              left="1h 15m"
+              activity="25 min used today"
+              bankedLabel="40 min banked"
+              aheadLabel="1 day to borrow"
+              bar={{ banked: [0.67], own: 60, used: 25, ahead: [0] }}
+            />
+          </div>
+        </div>
+      </Phone>
+    </div>
+  </div>
+</section>
+
+<style>
+  .hero {
+    padding-block: var(--space-7) var(--space-section);
+  }
+
+  .layout {
+    display: grid;
+    gap: var(--space-7);
+    align-items: center;
+  }
+
+  h1 {
+    font-size: var(--text-3xl);
+    letter-spacing: -0.035em;
+    line-height: 1.05;
+  }
+
+  /* The two ideas in the title, in the hues the app gives them: banked time
+     is green, borrowed time is rust. The words fall back to a solid color
+     where gradients on text can't be drawn. */
+  .word {
+    color: var(--word-to);
+  }
+
+  .bank {
+    --word-from: var(--word-bank-from);
+    --word-to: var(--word-bank-to);
+  }
+
+  .borrow {
+    --word-from: var(--word-borrow-from);
+    --word-to: var(--word-borrow-to);
+  }
+
+  @supports (background-clip: text) or (-webkit-background-clip: text) {
+    .word {
+      background: linear-gradient(100deg, var(--word-from) 10%, var(--word-to) 90%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+  }
+
+  @media (forced-colors: active) {
+    .word {
+      background: none;
+      color: CanvasText;
+    }
+  }
+
+  .lead {
+    max-width: 34rem;
+    margin-top: var(--space-5);
+    color: var(--color-on-surface-variant);
+    font-size: var(--text-lg);
+  }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-4) var(--space-5);
+    margin-top: var(--space-6);
+  }
+
+  .perks {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-4);
+    color: var(--color-on-surface-variant);
+    font-size: var(--text-sm);
+  }
+
+  .perks li {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .perks :global(svg) {
+    flex-shrink: 0;
+    color: var(--color-primary);
+    stroke-width: 2.25;
+  }
+
+  .visual {
+    display: flex;
+    justify-content: center;
+  }
+
+  .app-screen {
+    padding: 8px 12px 20px;
+  }
+
+  .screen-title {
+    margin: 6px 4px 14px;
+    font-size: 24px;
+    font-weight: 750;
+    letter-spacing: -0.02em;
+  }
+
+  .cards {
+    display: grid;
+    gap: 10px;
+  }
+
+  /* On a laptop or desktop the hero fills the first screen, and nothing
+     more. The phone is drawn larger here, then steps down on shorter
+     screens so it's as big as the screen allows and always fits. At zoom 1
+     it's about 532px tall. */
+  @media (min-width: 64rem) {
+    .hero {
+      display: grid;
+      align-items: center;
+      min-height: calc(100svh - var(--header-height));
+      padding-block: var(--space-5);
+    }
+
+    .layout {
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-8);
+    }
+
+    .visual :global(.hero-phone) {
+      zoom: 1.25;
+    }
+  }
+
+  @media (min-width: 64rem) and (max-height: 900px) {
+    .visual :global(.hero-phone) {
+      zoom: 1.12;
+    }
+  }
+
+  @media (min-width: 64rem) and (max-height: 800px) {
+    .visual :global(.hero-phone) {
+      zoom: 1;
+    }
+  }
+
+  @media (min-width: 64rem) and (max-height: 700px) {
+    .visual :global(.hero-phone) {
+      zoom: 0.88;
+    }
+  }
+
+  @media (min-width: 64rem) and (max-height: 620px) {
+    .visual :global(.hero-phone) {
+      zoom: 0.78;
+    }
+  }
+</style>

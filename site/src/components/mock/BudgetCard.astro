@@ -1,0 +1,171 @@
+---
+// A static copy of the app's Home card: the app, its time left and what's
+// happened today, then the usage row with each end labeled under it.
+import Icon from "../Icon.astro";
+import AppTile from "./AppTile.astro";
+import UsageBar from "./UsageBar.astro";
+
+interface Props {
+  app: string;
+  color: string;
+  // "35 min", "1h 15m". Ignored when the time is up.
+  left: string;
+  state?: "ok" | "low" | "out";
+  activity: string;
+  bankedLabel?: string;
+  aheadLabel?: string;
+  // Borrowed time is owed, so its label turns rust and bold.
+  aheadTaken?: boolean;
+  bar: {
+    banked?: number[];
+    own: number;
+    used?: number;
+    repaid?: number;
+    ahead?: number[];
+  };
+}
+
+const {
+  app,
+  color,
+  left,
+  state = "ok",
+  activity,
+  bankedLabel,
+  aheadLabel,
+  aheadTaken = false,
+  bar,
+} = Astro.props;
+---
+
+<div class:list={["card", state]}>
+  <div class="header">
+    <AppTile name={app} color={color} />
+    <div class="titles">
+      <div class="title-row">
+        <p class="app">{app}</p>
+        <p class="amount">
+          {state === "low" && <Icon name="hourglass" size={16} />}
+          {state === "out" && <Icon name="ban" size={16} />}
+          {
+            state === "out" ? (
+              <span class="value">Time's up</span>
+            ) : (
+              <span class="value">
+                {left}
+                <span class="unit"> left</span>
+              </span>
+            )
+          }
+        </p>
+      </div>
+      <p class="activity">{activity}</p>
+    </div>
+  </div>
+
+  <div class="row">
+    <UsageBar {...bar} />
+  </div>
+
+  <div class="ends">
+    {bankedLabel && <span>{bankedLabel}</span>}
+    {aheadLabel && <span class:list={["ahead", { taken: aheadTaken }]}>{aheadLabel}</span>}
+  </div>
+</div>
+
+<style>
+  .card {
+    padding: 14px;
+    border: 1px solid var(--color-outline-variant);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface-container);
+  }
+
+  .header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .titles {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .title-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .app {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    font-size: 15px;
+    font-weight: 650;
+    letter-spacing: 0;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .amount {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    color: var(--color-on-surface);
+  }
+
+  .low .amount {
+    color: var(--color-low);
+  }
+
+  .out .amount {
+    color: var(--color-borrowed);
+  }
+
+  .value {
+    font-size: 17px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .unit {
+    color: var(--color-on-surface-variant);
+    font-size: 13px;
+    font-weight: 400;
+  }
+
+  .activity {
+    overflow: hidden;
+    color: var(--color-on-surface-variant);
+    font-size: 12.5px;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .row {
+    margin-top: 14px;
+  }
+
+  .ends {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 6px;
+    color: var(--color-on-surface-variant);
+    font-size: 11.5px;
+    line-height: 1.5;
+  }
+
+  .ahead {
+    margin-left: auto;
+    text-align: right;
+  }
+
+  .taken {
+    color: var(--color-borrowed);
+    font-weight: 650;
+  }
+</style>

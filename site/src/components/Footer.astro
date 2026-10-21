@@ -1,0 +1,113 @@
+---
+import { NAV, SITE } from "../config";
+import Icon from "./Icon.astro";
+import Logo from "./Logo.astro";
+
+const year = new Date().getFullYear();
+---
+
+<footer class="site-footer">
+  <div class="container grid">
+    <div class="about">
+      <a class="brand" href="/" aria-label="Roolio home">
+        <Logo size={28} />
+        <span class="wordmark">Roolio</span>
+      </a>
+      <p>App time you can bank and borrow. Made for Android.</p>
+    </div>
+
+    <nav aria-label="Footer">
+      <ul role="list" class="links">
+        {NAV.map((item) => (
+          <li>
+            <a href={item.href}>{item.label}</a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+
+    <a class="contact" href={`mailto:${SITE.contactEmail}`}>
+      <Icon name="mail" size={20} />
+      <span>{SITE.contactEmail}</span>
+    </a>
+  </div>
+
+  <div class="container legal">
+    <p>© {year} Roolio</p>
+  </div>
+</footer>
+
+<style>
+  .site-footer {
+    padding-block: var(--space-7) var(--space-6);
+    border-top: 1px solid var(--color-border);
+    color: var(--color-on-surface-variant);
+    font-size: var(--text-sm);
+  }
+
+  .grid {
+    display: grid;
+    gap: var(--space-6);
+  }
+
+  .about {
+    display: grid;
+    gap: var(--space-3);
+  }
+
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    width: fit-content;
+    color: var(--color-on-surface);
+    text-decoration: none;
+  }
+
+  .wordmark {
+    font-size: 1.125rem;
+    font-weight: 750;
+    letter-spacing: -0.02em;
+  }
+
+  .links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-5);
+  }
+
+  .links a,
+  .contact {
+    text-decoration: none;
+    text-underline-offset: 0.2em;
+  }
+
+  .links a:hover,
+  .contact:hover {
+    color: var(--color-on-surface);
+    text-decoration: underline;
+  }
+
+  .contact {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    width: fit-content;
+    overflow-wrap: anywhere;
+  }
+
+  .legal {
+    margin-top: var(--space-6);
+    padding-top: var(--space-5);
+    border-top: 1px solid var(--color-border);
+    color: var(--color-outline);
+  }
+
+  @media (min-width: 48rem) {
+    .grid {
+      grid-template-columns: 1.4fr auto auto;
+      align-items: start;
+      gap: var(--space-7);
+    }
+  }
+</style>

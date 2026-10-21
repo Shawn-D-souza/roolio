@@ -1,0 +1,94 @@
+---
+import Icon from "../Icon.astro";
+import type { IconName } from "../icons";
+import Section from "../Section.astro";
+
+const problems: { icon: IconName; title: string; text: string }[] = [
+  {
+    icon: "lock",
+    title: "Too strict to keep",
+    text: "A long call, a slow evening, a film with friends. A fixed limit can't bend, so sooner or later you start ignoring it.",
+  },
+  {
+    icon: "trendingUp",
+    title: "Raised and never lowered",
+    text: "When you need more, you raise the limit. Then you forget to set it back, and it stops meaning anything.",
+  },
+  {
+    icon: "hourglass",
+    title: "Good days go unrewarded",
+    text: "Use less than your limit and the extra time disappears. Tomorrow starts the same either way.",
+  },
+];
+---
+
+<Section
+  id="problem"
+  eyebrow="The problem"
+  title="Fixed limits don't last."
+  intro="Most screen-time tools give each app a hard daily limit. It works for a week, then it gets in the way."
+  tone="tinted"
+>
+  <ul role="list" class="grid">
+    {
+      problems.map((problem) => (
+        <li class="item reveal">
+          <span class="icon">
+            <Icon name={problem.icon} />
+          </span>
+          <h3>{problem.title}</h3>
+          <p>{problem.text}</p>
+        </li>
+      ))
+    }
+  </ul>
+  <p class="bridge reveal">Roolio treats your time like a budget instead.</p>
+</Section>
+
+<style>
+  .grid {
+    display: grid;
+    gap: var(--space-4);
+  }
+
+  .item {
+    padding: var(--space-5);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background: var(--card-bg);
+  }
+
+  .icon {
+    display: inline-grid;
+    place-items: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    margin-bottom: var(--space-4);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-container-high);
+    color: var(--color-on-surface-variant);
+  }
+
+  h3 {
+    font-size: var(--text-xl);
+  }
+
+  .item p {
+    margin-top: var(--space-2);
+    color: var(--color-on-surface-variant);
+  }
+
+  .bridge {
+    margin-top: var(--space-6);
+    color: var(--color-primary);
+    font-size: var(--text-xl);
+    font-weight: 700;
+    text-align: center;
+  }
+
+  @media (min-width: 48rem) {
+    .grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+</style>

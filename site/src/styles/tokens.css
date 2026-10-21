@@ -1,0 +1,108 @@
+/*
+ * Design tokens.
+ *
+ * The colors copy the app's `src/theme/tokens.ts`, so the site and the app
+ * read as one product. Keep the two in step. The text and background pairs
+ * there were measured for WCAG AA, and the same rules hold here:
+ *   - Text on a container uses its matching "on" color.
+ *   - `outline-variant` is decorative only (hairlines, card edges).
+ *   - Banked (green) and borrowed (rust) always come with a word or an icon,
+ *     never color alone.
+ *
+ * Each color is written once as light-dark(light, dark). The page follows
+ * the system theme until the reader picks one with the theme toggle, which
+ * sets `data-theme` on <html>.
+ */
+:root {
+  color-scheme: light dark;
+
+  --color-background: light-dark(#FBF9FF, #121218);
+  --color-surface: light-dark(#FBF9FF, #121218);
+  --color-surface-container: light-dark(#F0EDF9, #1E1E25);
+  --color-surface-container-high: light-dark(#E9E5F4, #2C2C34);
+  --color-surface-container-highest: light-dark(#E3DFEE, #36363E);
+  --color-on-surface: light-dark(#1B1B21, #E4E1E9);
+  --color-on-surface-variant: light-dark(#47464F, #C8C5D0);
+  --color-outline: light-dark(#6C6A74, #928F9A);
+  --color-outline-variant: light-dark(#C8C5D0, #47464F);
+  --color-primary: light-dark(#4F46B8, #C4C1FF);
+  --color-on-primary: light-dark(#FFFFFF, #26148A);
+  --color-primary-container: light-dark(#E3DFFF, #3D3AA0);
+  --color-on-primary-container: light-dark(#14006B, #E3DFFF);
+  --color-banked: light-dark(#2E7D5B, #7DD8AE);
+  --color-borrowed: light-dark(#A8452D, #FFB4A0);
+  --color-borrowed-container: light-dark(#FFDAD1, #5C1F0F);
+  --color-on-borrowed-container: light-dark(#3A0B00, #FFDAD1);
+  --color-low: light-dark(#7A5900, #F2BF48);
+  --color-low-container: light-dark(#FFDEA3, #5A4200);
+  --color-on-low-container: light-dark(#261A00, #FFDEA3);
+  --color-scrim: light-dark(rgb(0 0 0 / 0.4), rgb(0 0 0 / 0.6));
+
+  /* Site only: a border between outline-variant and outline, for the edges
+     that should read at a glance (the header, section dividers, cards). */
+  --color-border: light-dark(#B8B5C2, #4E4D58);
+
+  /* Site only: the gradients on "bank" and "borrow" in the hero title. Light
+     runs from the primary indigo into the app's banked and borrowed colors.
+     Dark uses brighter, more saturated tones of the same hues, because the
+     app's pale dark-theme colors fade into the off-white title around them. */
+  --word-bank-from: light-dark(#4F46B8, #3FE0A0);
+  --word-bank-to: light-dark(#2E7D5B, #2CC4C9);
+  --word-borrow-from: light-dark(#4F46B8, #FFA06A);
+  --word-borrow-to: light-dark(#A8452D, #FF6A47);
+
+  /* The app icon's colors (DESIGN.md). For the logo tile and the closing
+     band only, never as a status color. */
+  --brand-indigo: #2B2670;
+  --brand-lilac: #C9C5FF;
+
+  /* The device frame around app mock-ups. */
+  --device-bezel: light-dark(#1B1B21, #000000);
+
+  --shadow-soft:
+    0 1px 2px light-dark(rgb(27 27 33 / 0.05), rgb(0 0 0 / 0.3)),
+    0 8px 24px light-dark(rgb(43 38 112 / 0.08), rgb(0 0 0 / 0.25));
+  --shadow-lifted:
+    0 2px 6px light-dark(rgb(27 27 33 / 0.06), rgb(0 0 0 / 0.35)),
+    0 24px 64px light-dark(rgb(43 38 112 / 0.18), rgb(0 0 0 / 0.5));
+
+  --font-sans: var(--font-figtree), system-ui, sans-serif;
+
+  /* Type scale: fluid between a 360px phone and a wide desktop. */
+  --text-xs: 0.8125rem;
+  --text-sm: 0.9375rem;
+  --text-base: 1.0625rem;
+  --text-lg: clamp(1.125rem, 1.06rem + 0.3vw, 1.3125rem);
+  --text-xl: clamp(1.25rem, 1.15rem + 0.45vw, 1.5rem);
+  --text-2xl: clamp(1.875rem, 1.5rem + 1.7vw, 2.75rem);
+  --text-3xl: clamp(2.375rem, 1.6rem + 3vw, 4rem);
+
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+  --space-8: 4rem;
+  /* Every section's top and bottom padding, and the gap under its heading. */
+  --space-section: clamp(4rem, 2.75rem + 4vw, 6.5rem);
+  --space-section-head: clamp(2.25rem, 1.75rem + 1.5vw, 3.25rem);
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+  --radius-full: 9999px;
+
+  --content-width: 72rem;
+  --header-height: 4rem;
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+}

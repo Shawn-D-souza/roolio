@@ -1,0 +1,184 @@
+---
+import Icon from "../Icon.astro";
+import type { IconName } from "../icons";
+import Logo from "../Logo.astro";
+import Section from "../Section.astro";
+import PauseCard from "../mock/PauseCard.astro";
+import Phone from "../mock/Phone.astro";
+
+const points: { icon: IconName; title: string; text: string }[] = [
+  {
+    icon: "bell",
+    title: "A heads-up first",
+    text: "A notification 5 minutes and 1 minute before an app is paused, so you can wrap up on your own terms.",
+  },
+  {
+    icon: "pause",
+    title: "Your call, made calmly",
+    text: "Stop for now, take 5 more minutes, or borrow from tomorrow. Each choice says exactly what it uses.",
+  },
+  {
+    icon: "pictureInPicture",
+    title: "No side doors",
+    text: "Time in picture-in-picture and split screen counts too. Roolio pauses the video and stays until the window is closed.",
+  },
+];
+---
+
+<Section
+  id="pause-screen"
+  eyebrow="When time runs out"
+  title="A gentle pause, not a lockout."
+  intro="When an app's time is up, Roolio takes you back to your home screen and lets you decide what happens next."
+  tone="tinted"
+>
+  <div class="layout">
+    <div class="visual reveal">
+      <Phone
+        screen="home"
+        label="Roolio's pause screen over a dimmed home screen. It reads: Time's up for today. The choices are Got it, 5 more minutes, and Borrow 45 min from tomorrow."
+      >
+        <div class="launcher" aria-hidden="true">
+          {Array.from({ length: 16 }, () => <span class="launcher-app" />)}
+        </div>
+        <div class="scrim"></div>
+        <div class="sheet">
+          <PauseCard app="Streamly" color="#E2762B" title="Time's up for today" borrowLabel="Borrow 45 min from tomorrow" />
+        </div>
+      </Phone>
+
+      <div class="notification" aria-hidden="true">
+        <Logo size={28} />
+        <div>
+          <p class="notification-title">5 minutes left on Streamly</p>
+          <p class="notification-text">Wrap up, or borrow more time when it runs out.</p>
+        </div>
+      </div>
+    </div>
+
+    <ul role="list" class="points">
+      {
+        points.map((point) => (
+          <li class="point reveal">
+            <span class="icon">
+              <Icon name={point.icon} />
+            </span>
+            <div>
+              <h3>{point.title}</h3>
+              <p>{point.text}</p>
+            </div>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</Section>
+
+<style>
+  .layout {
+    display: grid;
+    gap: var(--space-7);
+    align-items: center;
+  }
+
+  .visual {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    padding-top: var(--space-6);
+  }
+
+  .launcher {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 22px 18px;
+    padding: 28px 24px;
+  }
+
+  .launcher-app {
+    aspect-ratio: 1;
+    border-radius: 30%;
+    background: color-mix(in srgb, var(--color-surface) 70%, transparent);
+  }
+
+  .scrim {
+    position: absolute;
+    inset: 0;
+    background: var(--color-scrim);
+  }
+
+  .sheet {
+    position: absolute;
+    inset: auto 10px 12px;
+  }
+
+  .notification {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    display: flex;
+    gap: var(--space-3);
+    width: min(19rem, 92%);
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background: var(--card-bg);
+    box-shadow: var(--shadow-lifted);
+    transform: translateX(-50%);
+  }
+
+  .notification-title {
+    font-size: var(--text-sm);
+    font-weight: 700;
+    line-height: 1.35;
+  }
+
+  .notification-text {
+    color: var(--color-on-surface-variant);
+    font-size: var(--text-xs);
+    line-height: 1.4;
+  }
+
+  .points {
+    display: grid;
+    gap: var(--space-6);
+  }
+
+  .point {
+    display: flex;
+    gap: var(--space-4);
+  }
+
+  .icon {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 3rem;
+    height: 3rem;
+    border-radius: var(--radius-md);
+    background: var(--color-primary-container);
+    color: var(--color-on-primary-container);
+  }
+
+  h3 {
+    font-size: var(--text-xl);
+  }
+
+  .point p {
+    margin-top: var(--space-1);
+    color: var(--color-on-surface-variant);
+  }
+
+  @media (min-width: 64rem) {
+    .layout {
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-8);
+    }
+
+    .notification {
+      left: auto;
+      right: -1rem;
+      transform: none;
+    }
+  }
+</style>

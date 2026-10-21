@@ -1,0 +1,31 @@
+---
+// A made-up app's icon: a rounded tile with its first letter. The mock-ups
+// never show real apps.
+interface Props {
+  name: string;
+  color: string;
+  size?: number;
+}
+
+const { name, color, size = 44 } = Astro.props;
+---
+
+<span class="tile" style={`--tile: ${color}; --size: ${size}px`} aria-hidden="true">
+  {name.charAt(0)}
+</span>
+
+<style>
+  .tile {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: var(--size);
+    height: var(--size);
+    border-radius: 28%;
+    background: linear-gradient(145deg, color-mix(in srgb, var(--tile) 78%, #ffffff), var(--tile));
+    color: #ffffff;
+    font-size: calc(var(--size) * 0.46);
+    font-weight: 750;
+    line-height: 1;
+  }
+</style>

@@ -1,0 +1,90 @@
+---
+// A static copy of the pause screen's card (roolio_pause_screen.xml), with
+// its real wording. The choices run from strongest to quietest: stop, a
+// little more, then borrowing from tomorrow.
+import Logo from "../Logo.astro";
+import AppTile from "./AppTile.astro";
+
+interface Props {
+  app: string;
+  color: string;
+  title: string;
+  borrowLabel: string;
+}
+
+const { app, color, title, borrowLabel } = Astro.props;
+---
+
+<div class="card">
+  <p class="brand">
+    <Logo size={16} />
+    <span>Roolio</span>
+  </p>
+  <AppTile name={app} color={color} size={52} />
+  <p class="title">{title}</p>
+  <div class="choices">
+    <span class="choice filled">Got it</span>
+    <span class="choice tonal">5 more minutes</span>
+    <span class="choice text">{borrowLabel}</span>
+  </div>
+</div>
+
+<style>
+  .card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 20px 18px 14px;
+    border-radius: var(--radius-xl);
+    background: var(--color-surface-container);
+    color: var(--color-on-surface);
+    text-align: center;
+    box-shadow: var(--shadow-lifted);
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--color-on-surface-variant);
+    font-size: 11.5px;
+  }
+
+  .title {
+    font-size: 19px;
+    font-weight: 750;
+    letter-spacing: -0.01em;
+  }
+
+  .choices {
+    display: grid;
+    gap: 6px;
+    width: 100%;
+    margin-top: 6px;
+  }
+
+  .choice {
+    display: grid;
+    place-items: center;
+    min-height: 40px;
+    padding-inline: 12px;
+    border-radius: var(--radius-full);
+    font-size: 13.5px;
+    font-weight: 650;
+  }
+
+  .filled {
+    background: var(--color-primary);
+    color: var(--color-on-primary);
+  }
+
+  .tonal {
+    background: var(--color-surface-container-highest);
+    color: var(--color-on-surface);
+  }
+
+  .text {
+    color: var(--color-primary);
+  }
+</style>

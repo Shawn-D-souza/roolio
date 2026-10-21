@@ -32,6 +32,7 @@ Kotlin owns all data and enforcement, and React Native is the UI. Read this map 
 - `src/theme/`: `tokens.ts` holds colors, spacing and radius, and `ThemeProvider.tsx` provides `useAppTheme()`.
 - `src/usage/useUsageSync.ts`: starts or stops tracking when Usage Access changes.
 - `DESIGN.md`: the app icon spec.
+- `site/`: the public website (Astro, static), a separate npm project with its own `package.json` and README. It's left out of the app's TypeScript, ESLint and Metro. `src/components/home/` holds the homepage sections, `src/components/mock/` holds HTML copies of app screens, and `src/config.ts` holds the contact email and the Google Play link.
 
 ### How it fits together
 
@@ -47,6 +48,7 @@ Kotlin owns all data and enforcement, and React Native is the UI. Read this map 
 - A new budget field goes through `db/RoolioDatabase.kt`, `BudgetStore.kt`, `Budgets.kt`, `statusToMap` in `RoolioCoreModule.kt`, `RoolioCore.types.ts`, then `src/budgets/types.ts` and `repository.ts`.
 - Setting limits (budget 1 min to the period max, ceiling and cap 0–7) are checked in both `src/budgets/rules.ts` and `Budgets.kt`. Keep them in step.
 - The pause screen's colors in `res/values*/roolio_pause_colors.xml` copy `src/theme/tokens.ts`. Keep them in step.
+- The website's colors in `site/src/styles/tokens.css` also copy `src/theme/tokens.ts`, and its mock-ups in `site/src/components/mock/` copy the Home card and the pause screen. Keep them in step.
 
 ### Budget rules
 

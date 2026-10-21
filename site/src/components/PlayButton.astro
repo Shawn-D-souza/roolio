@@ -1,0 +1,96 @@
+---
+import { PLAY_STORE } from "../config";
+import Icon from "./Icon.astro";
+
+interface Props {
+  // "inverse" sits on the deep indigo band.
+  tone?: "default" | "inverse";
+}
+
+const { tone = "default" } = Astro.props;
+
+// Roolio's own button, not Google's badge: the official badge artwork can't
+// be restyled or marked "coming soon". Until the listing is live this is a
+// plain label, not a control, so there's nothing to press that does nothing.
+---
+
+{
+  PLAY_STORE.live ? (
+    <a class:list={["play", tone]} href={PLAY_STORE.url} rel="noopener">
+      <Icon name="download" size={22} />
+      <span class="lines">
+        <span class="small">Get it on</span>
+        <span class="big">Google Play</span>
+      </span>
+    </a>
+  ) : (
+    <p class:list={["play", "soon", tone]}>
+      <Icon name="download" size={22} />
+      <span class="lines">
+        <span class="small">Coming soon to</span>
+        <span class="big">Google Play</span>
+      </span>
+    </p>
+  )
+}
+
+<style>
+  .play {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-3);
+    min-height: 3.5rem;
+    padding: var(--space-2) var(--space-5) var(--space-2) var(--space-4);
+    border-radius: var(--radius-full);
+    background: var(--color-primary);
+    color: var(--color-on-primary);
+    text-decoration: none;
+    line-height: 1.2;
+    transition:
+      transform 160ms ease,
+      box-shadow 160ms ease;
+  }
+
+  a.play:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-soft);
+  }
+
+  .lines {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .small {
+    font-size: var(--text-xs);
+    opacity: 0.85;
+  }
+
+  .big {
+    font-size: 1.125rem;
+    font-weight: 700;
+  }
+
+  /* Coming soon reads as a label rather than a button: tonal, not solid. */
+  .soon {
+    background: var(--color-primary-container);
+    color: var(--color-on-primary-container);
+  }
+
+  .inverse {
+    background: #ffffff;
+    color: var(--brand-indigo);
+  }
+
+  .soon.inverse {
+    background: rgb(255 255 255 / 0.12);
+    color: #ffffff;
+    box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.35);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .play {
+      transition: none;
+    }
+  }
+</style>
