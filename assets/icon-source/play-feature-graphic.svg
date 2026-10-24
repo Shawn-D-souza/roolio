@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="500" viewBox="0 0 1024 500">
+  <title>Roolio feature graphic</title>
+  <defs>
+    <radialGradient id="glow" cx="800" cy="250" r="300" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#3D3AA0"/>
+      <stop offset="1" stop-color="#2B2670"/>
+    </radialGradient>
+    <clipPath id="jar"><circle cx="48" cy="54" r="24"/></clipPath>
+  </defs>
+  <rect width="1024" height="500" fill="#2B2670"/>
+  <rect width="1024" height="500" fill="url(#glow)"/>
+
+  <g font-family="Figtree" fill="#FFFFFF">
+    <text x="80" y="200" font-family="Figtree ExtraBold, Figtree" font-size="60" font-weight="800">App time you can</text>
+    <text x="80" y="272" font-family="Figtree ExtraBold, Figtree" font-size="60" font-weight="800"><tspan fill="#7DD8AE">bank</tspan> and <tspan fill="#FFB4A0">borrow.</tspan></text>
+    <text x="80" y="332" font-family="Figtree Medium, Figtree" font-size="26" font-weight="500" fill="#C9C5FF">Screen-time limits that bend without breaking.</text>
+  </g>
+
+  <!-- The time jar from roolio-icon.svg, without its tile. -->
+  <g transform="translate(588.8 38.8) scale(4.4)">
+    <circle cx="48" cy="54" r="26" fill="#C9C5FF" fill-opacity="0.14"/>
+    <g clip-path="url(#jar)">
+      <path d="M20 61 C30 57 39 65 48 61 S66 57 76 61 V84 H20 Z" fill="#FF9E85"/>
+    </g>
+    <circle cx="48" cy="54" r="26" fill="none" stroke="#C9C5FF" stroke-width="4"/>
+    <rect x="38" y="14" width="20" height="9" rx="4.5" fill="#C9C5FF"/>
+    <rect x="40" y="22" width="16" height="8" fill="#C9C5FF"/>
+    <circle cx="48" cy="46" r="9.5" fill="#FFFFFF"/>
+    <path d="M48 40 V46 L52.5 49" fill="none" stroke="#2B2670" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M29 47 A20 20 0 0 1 38 37" fill="none" stroke="#FFFFFF" stroke-opacity="0.45" stroke-width="3" stroke-linecap="round"/>
+  </g>
+</svg>

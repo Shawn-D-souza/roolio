@@ -15,6 +15,7 @@ this folder is bundled into the app.
 | `roolio-adaptive-monochrome.svg` | `../android-icon-monochrome.png` (1024×1024) | `expo.android.adaptiveIcon.monochromeImage` — Android 13+ themed icons |
 | `roolio-notification.svg` | `../notification-icon.png` (96×96) | nothing yet — kept for a future `expo-notifications` config |
 | — | `play-store-512.png` | Play Console listing upload (not referenced by the app) |
+| `play-feature-graphic.svg` | `play-feature-graphic.png` (1024×500, opaque) | Play Console feature graphic (not referenced by the app) |
 
 ## Regenerating
 
@@ -22,3 +23,8 @@ Keep the mark inside Android's central 66% safe zone on the adaptive layers — 
 current export spans 26.7–73.3% horizontally and 21.6–78.4% vertically. Both the
 adaptive foreground and the monochrome layer need a transparent background; `icon.png`
 must stay fully opaque.
+
+The feature graphic's text is set in Figtree, the website's font. Install Figtree's
+ExtraBold and Medium weights as TTF or OTF before exporting it, or the renderer falls
+back to another font. The WOFF files in `site/node_modules/@fontsource/figtree` aren't
+read by librsvg.
