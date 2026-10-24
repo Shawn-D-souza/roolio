@@ -132,4 +132,3 @@ EAS_LOCAL_BUILD_WORKINGDIR=$HOME/.eas-build npx eas-cli@latest build --platform 
   - Saved preferences (such as the notifications step's "Don't ask again" in `roolio-permissions`): rename or remove a key only with code that moves or clears the old one.
   - Notification channels: Android keeps a channel's importance and sound from when it was first created, so changing them needs a new channel ID, and the old channel deleted.
 - Code that ships together (JS, the bridge and Kotlin) needs no compatibility layers. Change or remove it directly.
-- Don't reference the PRD (`Roolio_PRD.md`) or its section numbers in code or comments. Comments should explain the code on their own.

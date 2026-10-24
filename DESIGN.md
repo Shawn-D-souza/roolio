@@ -1,6 +1,6 @@
 # Roolio: Design Guide (v1)
 
-Companion to `Roolio_PRD.md`. This file defines how Roolio looks, feels, and sounds.
+This file defines how Roolio looks, feels, and sounds.
 
 ## Direction
 
