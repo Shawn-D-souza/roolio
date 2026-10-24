@@ -21,7 +21,7 @@ Kotlin owns all data and enforcement, and React Native is the UI. Read this map 
   - `tracking/SystemApps.kt`: exempt apps. `tracking/Notifications.kt`: the tracking, permission and time-left notifications. Native strings are in `res/values/strings.xml`.
 - `modules/roolio-permissions/`: status of Usage Access, Display over other apps and notifications, plus opening the Settings screen for each.
 - `modules/installed-apps/`: installed apps (exempt ones left out), app icons and uninstall checks.
-- `src/app/`: routes. `(tabs)/index.tsx` is Home, `(tabs)/settings.tsx` is Settings, `add-app.tsx` picks apps, `budget/[packageName].tsx` is app detail and editing, and `permissions.tsx` is onboarding. `_layout.tsx` guards routes with `Stack.Protected` on `needsSetup`.
+- `src/app/`: routes. `(tabs)/index.tsx` is Home, `(tabs)/settings.tsx` is Settings, `add-app.tsx` picks apps, `budget/[packageName].tsx` is app detail, editing and removal, and `permissions.tsx` is onboarding. `_layout.tsx` guards routes with `Stack.Protected` on `needsSetup`.
 - `src/budgets/`: the JS side of budgets.
   - `repository.ts` wraps the native module, converts ms to minutes and emits change events.
   - `rules.ts` holds limits, presets, steps and defaults. `format.ts` formats durations and labels.

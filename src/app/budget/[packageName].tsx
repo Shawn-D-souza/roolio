@@ -14,7 +14,11 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useAppTheme } from "../../theme/ThemeProvider";
 import { radius, space } from "../../theme/tokens";
 import { useBudget } from "../../hooks/budgets/useBudget";
-import { createBudget, updateBudget } from "../../budgets/repository";
+import {
+  createBudget,
+  deleteBudgets,
+  updateBudget,
+} from "../../budgets/repository";
 import {
   convertBudget,
   defaultSettings,
@@ -40,6 +44,7 @@ import { DurationStepper } from "../../components/budget/DurationStepper";
 import { CountStepper } from "../../components/budget/CountStepper";
 import { PrimaryButton } from "../../components/ui/PrimaryButton";
 import { ConfirmDialog } from "../../components/ui/ConfirmDialog";
+import { TextButton } from "../../components/ui/TextButton";
 
 type Params = {
   packageName: string;
@@ -70,7 +75,14 @@ export default function BudgetScreen() {
     setMode(budget ? "edit" : "create");
   }
 
-  const app: BudgetedApp | null = mode === "edit" ? budget : newApp;
+  // Keep showing the last loaded budget so removing it (which makes `budget`
+  // null) doesn't swap the form for an error while the screen closes.
+  const [shownBudget, setShownBudget] = useState(budget);
+  if (budget && budget !== shownBudget) {
+    setShownBudget(budget);
+  }
+
+  const app: BudgetedApp | null = mode === "edit" ? shownBudget : newApp;
   const isNew = mode === null ? newApp !== null : mode === "create";
 
   return (
@@ -126,7 +138,7 @@ export default function BudgetScreen() {
       )}
 
       {status === "ready" && app && (
-        <BudgetForm app={app} budget={mode === "edit" ? budget : null} />
+        <BudgetForm app={app} budget={mode === "edit" ? shownBudget : null} />
       )}
     </SafeAreaView>
   );
@@ -154,9 +166,9 @@ function BudgetForm({ app, budget }: BudgetFormProps) {
   // While a time is being typed, the bottom button commits it ("Done").
   const [typingTime, setTypingTime] = useState(false);
   // `dialog` keeps its content while `dialogOpen` animates it out.
-  const [dialog, setDialog] = useState<"switch-period" | "save-error">(
-    "switch-period",
-  );
+  const [dialog, setDialog] = useState<
+    "switch-period" | "save-error" | "remove" | "remove-error"
+  >("switch-period");
   const [dialogOpen, setDialogOpen] = useState(false);
 
   const openDialog = (kind: typeof dialog) => {
@@ -203,6 +215,20 @@ function BudgetForm({ app, budget }: BudgetFormProps) {
     }
   };
 
+  const remove = async () => {
+    if (savingRef.current) return;
+    savingRef.current = true;
+    setSaving(true);
+    try {
+      await deleteBudgets([app.packageName]);
+      router.back();
+    } catch {
+      savingRef.current = false;
+      setSaving(false);
+      openDialog("remove-error");
+    }
+  };
+
   const handleSave = () => {
     if (!canSave) return;
     // Switching periods restarts how time is counted, so confirm first.
@@ -236,11 +262,31 @@ function BudgetForm({ app, budget }: BudgetFormProps) {
               { label: "Switch now", onPress: () => void persist() },
             ],
           }
-      : {
-          title: "Couldn't save budget",
-          message: "Your changes weren't saved. Please try again.",
-          actions: [{ label: "OK" }],
-        };
+      : dialog === "remove"
+        ? {
+            title: `Remove ${app.appName}?`,
+            message:
+              "Roolio will stop tracking and pausing this app. Its budget, banked and borrowed time, and usage history will be deleted.",
+            actions: [
+              { label: "Cancel" },
+              {
+                label: "Remove",
+                tone: "destructive" as const,
+                onPress: () => void remove(),
+              },
+            ],
+          }
+        : dialog === "remove-error"
+          ? {
+              title: "Couldn't remove budget",
+              message: "This budget wasn't removed. Please try again.",
+              actions: [{ label: "OK" }],
+            }
+          : {
+              title: "Couldn't save budget",
+              message: "Your changes weren't saved. Please try again.",
+              actions: [{ label: "OK" }],
+            };
 
   return (
     <>
@@ -318,6 +364,17 @@ function BudgetForm({ app, budget }: BudgetFormProps) {
             />
           </View>
         </View>
+
+        {isEditing && (
+          <TextButton
+            variant="destructive"
+            icon="delete-outline"
+            label="Remove budget"
+            onPress={() => {
+              if (!saving) openDialog("remove");
+            }}
+          />
+        )}
       </ScrollView>
 
       <View
