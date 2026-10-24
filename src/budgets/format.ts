@@ -58,16 +58,21 @@ export function formatPeriods(count: number, period: BudgetPeriod) {
 }
 
 const NEXT_PERIOD: Record<BudgetPeriod, string> = {
-  day: "Tomorrow",
-  week: "Next week",
-  month: "Next month",
+  day: "tomorrow",
+  week: "next week",
+  month: "next month",
 };
+
+// "tomorrow", "next week", "next month".
+export function nextPeriodLabel(period: BudgetPeriod) {
+  return NEXT_PERIOD[period];
+}
 
 // "Tomorrow", "Next week", "Next 3 days".
 export function formatUpcoming(count: number, period: BudgetPeriod) {
-  return count === 1
-    ? NEXT_PERIOD[period]
-    : `Next ${formatPeriods(count, period)}`;
+  if (count !== 1) return `Next ${formatPeriods(count, period)}`;
+  const next = NEXT_PERIOD[period];
+  return next[0].toUpperCase() + next.slice(1);
 }
 
 // Like `formatPeriods`, but 0 reads as "Off".
