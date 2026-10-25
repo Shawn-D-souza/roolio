@@ -48,3 +48,19 @@ export function openPermissionSettings(
 ): void {
   RoolioPermissionsModule.openSettings(permission, hint);
 }
+
+/**
+ * Whether Roolio is exempt from battery optimization. Some phones stop its
+ * tracking to save battery otherwise, and apps then aren't counted or paused.
+ */
+export function isBatteryUnrestricted(): boolean {
+  return RoolioPermissionsModule.isBatteryUnrestricted();
+}
+
+/**
+ * Opens the Settings screen where Roolio's battery use can be set to
+ * Unrestricted, and shows `hint` there like `openPermissionSettings`.
+ */
+export function openBatterySettings(hint: string): void {
+  RoolioPermissionsModule.openBatterySettings(hint);
+}

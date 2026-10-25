@@ -10,6 +10,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import android.os.PowerManager
 import android.os.Process
 import android.os.SystemClock
 import android.provider.Settings
@@ -28,6 +29,9 @@ private const val KEY_NOTIFICATIONS_DECLINED = "notifications_declined"
 // How often, and for how long, to check whether the user granted the permission in Settings.
 private const val WATCH_INTERVAL_MS = 400L
 private const val WATCH_TIMEOUT_MS = 3 * 60 * 1000L
+
+// Not one of the onboarding permissions, but opened and watched the same way.
+private const val BATTERY_UNRESTRICTED = "batteryUnrestricted"
 
 internal class PermissionsUnavailableException :
   CodedException("The permissions manager is unavailable")
@@ -125,6 +129,21 @@ class RoolioPermissionsModule : Module() {
       mainHandler.post { startWatching(permission) }
     }
 
+    // Whether Android leaves Roolio's tracking running when it saves battery.
+    Function("isBatteryUnrestricted") {
+      isBatteryUnrestricted()
+    }
+
+    // Opens the screen where Roolio's battery use can be set to Unrestricted.
+    // When it already is, the user is only checking it, so don't bring Roolio
+    // back on its own.
+    Function("openBatterySettings") { hint: String ->
+      val alreadyUnrestricted = isBatteryUnrestricted()
+      openSettings(BATTERY_UNRESTRICTED, settingsIntents(BATTERY_UNRESTRICTED))
+      showToast(hint)
+      if (!alreadyUnrestricted) mainHandler.post { startWatching(BATTERY_UNRESTRICTED) }
+    }
+
     OnActivityEntersForeground {
       mainHandler.post { stopWatching() }
     }
@@ -139,6 +158,7 @@ class RoolioPermissionsModule : Module() {
       "usageAccess" -> hasUsageAccess()
       "overlay" -> Settings.canDrawOverlays(context)
       "notifications" -> hasNotificationPermission()
+      BATTERY_UNRESTRICTED -> isBatteryUnrestricted()
       else -> throw UnknownPermissionException(permission)
     }
 
@@ -161,6 +181,17 @@ class RoolioPermissionsModule : Module() {
             .putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName),
           Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, packageUri()),
         )
+      // Android 12+ sets battery use on the app's info page. Older versions
+      // only have the list of apps, and some OEMs only the info page.
+      BATTERY_UNRESTRICTED ->
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+          listOf(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, packageUri()))
+        } else {
+          listOf(
+            Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS),
+            Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, packageUri()),
+          )
+        }
       else -> throw UnknownPermissionException(permission)
     }
 
@@ -187,6 +218,11 @@ class RoolioPermissionsModule : Module() {
         PackageManager.PERMISSION_GRANTED
     }
     return mode == AppOpsManager.MODE_ALLOWED
+  }
+
+  private fun isBatteryUnrestricted(): Boolean {
+    val power = context.getSystemService(Context.POWER_SERVICE) as PowerManager
+    return power.isIgnoringBatteryOptimizations(context.packageName)
   }
 
   // Notifications only became a runtime permission in Android 13.

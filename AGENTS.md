@@ -19,7 +19,7 @@ Kotlin owns all data and enforcement, and React Native is the UI. Read this map 
   - `tracking/TrackingService.kt`: a foreground service that ticks only while the screen is on. `BootReceiver.kt` restarts it after a reboot.
   - `tracking/PauseEnforcer.kt` decides when to pause, `PauseOverlay.kt` draws the pause screen with native views (`res/layout/roolio_pause_screen.xml`, `res/values*/roolio_pause_*.xml`), and `PauseCopy.kt` writes its text.
   - `tracking/SystemApps.kt`: exempt apps. `tracking/Notifications.kt`: the tracking, permission and time-left notifications. Native strings are in `res/values/strings.xml`.
-- `modules/roolio-permissions/`: status of Usage Access, Display over other apps and notifications, plus opening the Settings screen for each.
+- `modules/roolio-permissions/`: status of Usage Access, Display over other apps and notifications, plus opening the Settings screen for each. It also checks battery optimization (`isBatteryUnrestricted`, `openBatterySettings`), which isn't an onboarding step: Settings shows it in `src/components/settings/BatterySetting.tsx`.
 - `modules/installed-apps/`: installed apps (exempt ones left out), app icons and uninstall checks.
 - `src/app/`: routes. `(tabs)/index.tsx` is Home, `(tabs)/settings.tsx` is Settings, `add-app.tsx` picks apps, `budget/[packageName].tsx` is app detail, editing and removal, and `permissions.tsx` is onboarding. `_layout.tsx` guards routes with `Stack.Protected` on `needsSetup`.
 - `src/budgets/`: the JS side of budgets.

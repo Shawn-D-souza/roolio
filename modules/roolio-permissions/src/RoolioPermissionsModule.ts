@@ -14,6 +14,8 @@ declare class RoolioPermissionsModule extends NativeModule<{}> {
   getNotificationPermissionAsync(): Promise<NotificationPermission>;
   requestNotificationPermissionAsync(): Promise<NotificationPermission>;
   openSettings(permission: PermissionName, hint: string): void;
+  isBatteryUnrestricted(): boolean;
+  openBatterySettings(hint: string): void;
 }
 
 export default requireNativeModule<RoolioPermissionsModule>('RoolioPermissions');

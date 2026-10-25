@@ -4,6 +4,7 @@ import Constants from "expo-constants";
 import { useAppTheme } from "../../theme/ThemeProvider";
 import { space } from "../../theme/tokens";
 import { ThemeSelector } from "../../components/settings/ThemeSelector";
+import { BatterySetting } from "../../components/settings/BatterySetting";
 
 export default function SettingsScreen() {
   const { colors } = useAppTheme();
@@ -23,6 +24,7 @@ export default function SettingsScreen() {
           </Text>
 
           <ThemeSelector />
+          <BatterySetting />
         </View>
 
         <View style={styles.footer}>
@@ -49,6 +51,7 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+    paddingBottom: space.xl,
   },
   title: {
     fontSize: 28,
