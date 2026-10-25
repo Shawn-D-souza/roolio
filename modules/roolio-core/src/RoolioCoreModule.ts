@@ -5,6 +5,7 @@ import type {
   BudgetRecord,
   BudgetSettings,
   PastPeriod,
+  ThemeMode,
 } from "./RoolioCore.types";
 
 declare class RoolioCoreModule extends NativeModule<{}> {
@@ -24,6 +25,9 @@ declare class RoolioCoreModule extends NativeModule<{}> {
   setFirstDayOfWeekAsync(day: number): Promise<void>;
   syncTrackingAsync(): Promise<void>;
   isTrackingActive(): boolean;
+  getThemeMode(): ThemeMode;
+  setThemeMode(mode: ThemeMode): void;
+  isSystemDark(): boolean;
 }
 
 export default requireNativeModule<RoolioCoreModule>("RoolioCore");

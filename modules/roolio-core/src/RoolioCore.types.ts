@@ -5,6 +5,9 @@ export type BudgetKind = "app" | "group" | "total";
 /** What happens to borrowed time still owed when a budget changes period. */
 export type BorrowedChoice = "clear" | "keep";
 
+/** Roolio's theme: the phone's setting, or always light or dark. */
+export type ThemeMode = "system" | "light" | "dark";
+
 /** The values of a budget the user chooses. */
 export type BudgetSettings = {
   period: BudgetPeriod;

@@ -40,6 +40,7 @@ import androidx.core.view.WindowInsetsCompat
 import expo.modules.roolio.core.R
 import expo.modules.roolio.core.budgets.KeepGoing
 import expo.modules.roolio.core.budgets.PauseStatus
+import expo.modules.roolio.core.theme.AppTheme
 
 private const val TAG = "RoolioCore"
 private const val ENTER_MS = 200L
@@ -158,8 +159,9 @@ internal class PauseOverlay(
   }
 
   private fun addNow(status: PauseStatus, animate: Boolean): Boolean {
-    // The window isn't an activity, so it takes no theme of its own.
-    val themed = ContextThemeWrapper(context, android.R.style.Theme_DeviceDefault_NoActionBar)
+    // The window isn't an activity, so it takes no theme of its own, and
+    // light or dark follows Roolio's theme choice only through AppTheme.
+    val themed = ContextThemeWrapper(AppTheme.themed(context), android.R.style.Theme_DeviceDefault_NoActionBar)
     val root = PauseRoot(themed) { choose(onClose) }
     root.setBackgroundColor(ContextCompat.getColor(themed, R.color.roolio_pause_scrim))
     // A tap on the dim, outside the card. The card takes its own taps.

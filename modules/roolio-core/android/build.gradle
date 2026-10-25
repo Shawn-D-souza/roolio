@@ -16,3 +16,8 @@ android {
     abortOnError false
   }
 }
+
+dependencies {
+  // AppCompat's night mode applies the in-app theme; React Native already ships it.
+  implementation 'com.facebook.react:react-android'
+}

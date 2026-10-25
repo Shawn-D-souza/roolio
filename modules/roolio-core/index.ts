@@ -3,6 +3,7 @@ import type {
   BorrowedChoice,
   BudgetApp,
   BudgetSettings,
+  ThemeMode,
 } from "./src/RoolioCore.types";
 
 export type * from "./src/RoolioCore.types";
@@ -18,7 +19,7 @@ export const MONDAY = 2;
  * time even if nothing ran at midnight.
  *
  * Errors carry a `code`: ERR_ALREADY_BUDGETED, ERR_BUDGET_NOT_FOUND,
- * ERR_INVALID_SETTINGS, ERR_BORROWED_CHOICE_REQUIRED.
+ * ERR_INVALID_SETTINGS, ERR_BORROWED_CHOICE_REQUIRED, ERR_INVALID_THEME_MODE.
  */
 
 /** Every budget with its current period. */
@@ -72,4 +73,22 @@ export function syncTracking() {
 /** Whether the tracking service is running right now. */
 export function isTrackingActive(): boolean {
   return RoolioCoreModule.isTrackingActive();
+}
+
+/** The saved theme choice ("system" until the user picks one). */
+export function getThemeMode(): ThemeMode {
+  return RoolioCoreModule.getThemeMode();
+}
+
+/**
+ * Saves the theme choice and applies it to everything Roolio shows: its
+ * screens, dialogs and the pause screen. It's kept across restarts.
+ */
+export function setThemeMode(mode: ThemeMode) {
+  RoolioCoreModule.setThemeMode(mode);
+}
+
+/** Whether the phone itself is in dark mode, whatever Roolio's theme. */
+export function isSystemDark(): boolean {
+  return RoolioCoreModule.isSystemDark();
 }

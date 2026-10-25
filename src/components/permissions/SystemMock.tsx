@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { Image, StyleSheet, Text, useColorScheme, View } from "react-native";
+import { Image, StyleSheet, Text, View } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useAppTheme } from "../../theme/ThemeProvider";
 import { radius, space } from "../../theme/tokens";
@@ -36,7 +36,8 @@ const systemColors = {
 };
 
 function useSystemColors() {
-  return systemColors[useColorScheme() === "dark" ? "dark" : "light"];
+  const { systemColorScheme } = useAppTheme();
+  return systemColors[systemColorScheme === "dark" ? "dark" : "light"];
 }
 
 const roolioIcon = require("../../../assets/icon.png");

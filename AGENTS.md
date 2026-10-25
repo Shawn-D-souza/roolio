@@ -18,6 +18,7 @@ Kotlin owns all data and enforcement, and React Native is the UI. Read this map 
   - `tracking/UsageTracker.kt`: measures foreground time from UsageStats events and owns the one background thread. `Visibility.kt` decides what counts as visible time, and `UsageStore.kt` holds daily usage and the restart checkpoint.
   - `tracking/TrackingService.kt`: a foreground service that ticks only while the screen is on. `BootReceiver.kt` restarts it after a reboot.
   - `tracking/PauseEnforcer.kt` decides when to pause, `PauseOverlay.kt` draws the pause screen with native views (`res/layout/roolio_pause_screen.xml`, `res/values*/roolio_pause_*.xml`), and `PauseCopy.kt` writes its text.
+  - `theme/AppTheme.kt`: the saved theme choice (light, dark or system), kept in SharedPreferences so it can be read as the app starts. It sets AppCompat's night mode for the app's screens and dialogs, and gives the pause screen a context in the chosen theme. `RoolioCorePackage.kt` applies it when the app process starts, before any JS.
   - `tracking/SystemApps.kt`: exempt apps. `tracking/Notifications.kt`: the tracking, permission and time-left notifications. Native strings are in `res/values/strings.xml`.
 - `modules/roolio-permissions/`: status of Usage Access, Display over other apps and notifications, plus opening the Settings screen for each. It also checks battery optimization (`isBatteryUnrestricted`, `openBatterySettings`), which isn't an onboarding step: Settings shows it in `src/components/settings/BatterySetting.tsx`.
 - `modules/installed-apps/`: installed apps (exempt ones left out), app icons and uninstall checks.
@@ -29,7 +30,7 @@ Kotlin owns all data and enforcement, and React Native is the UI. Read this map 
 - `src/hooks/budgets/`: `useBudgets` loads the Home list and removes budgets of uninstalled apps, and `useBudget` loads one app. Both use `useBudgetQuery`, which reloads after a write, on returning to the foreground and at midnight.
 - `src/permissions/`: `PermissionsProvider` (permission status, `needsSetup`, and the notifications step's "Not now" and "Don't ask again", which is saved in `roolio-permissions`) and `steps.tsx` (onboarding content).
 - `src/components/<screen>/`: components grouped by screen, with shared ones in `ui/`.
-- `src/theme/`: `tokens.ts` holds colors, spacing and radius, and `ThemeProvider.tsx` provides `useAppTheme()`.
+- `src/theme/`: `tokens.ts` holds colors, spacing and radius, and `ThemeProvider.tsx` provides `useAppTheme()`. The theme mode is saved and applied natively (`getThemeMode`, `setThemeMode` in `roolio-core`). `systemColorScheme` is the phone's own theme, for the sketches of system screens in `src/components/permissions/SystemMock.tsx`.
 - `src/usage/useUsageSync.ts`: starts or stops tracking when Usage Access changes.
 - `DESIGN.md`: the app icon spec.
 - `site/`: the public website (Astro, static), a separate npm project with its own `package.json` and README. It's left out of the app's TypeScript, ESLint and Metro. `src/pages/privacy.astro` is the privacy policy, `src/components/home/` holds the homepage sections, `src/components/mock/` holds HTML copies of app screens, and `src/config.ts` holds the developer name, the contact email and the Google Play link.

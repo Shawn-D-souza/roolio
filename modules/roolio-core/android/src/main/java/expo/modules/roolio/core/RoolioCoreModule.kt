@@ -15,8 +15,13 @@ import expo.modules.roolio.core.budgets.BudgetStatus
 import expo.modules.roolio.core.budgets.Budgets
 import expo.modules.roolio.core.budgets.NewApp
 import expo.modules.roolio.core.budgets.PeriodRow
+import expo.modules.roolio.core.theme.AppTheme
+import expo.modules.roolio.core.theme.ThemeMode
 import expo.modules.roolio.core.tracking.TrackingService
 import expo.modules.roolio.core.tracking.UsageTracker
+
+internal class InvalidThemeModeException(mode: String) :
+  CodedException("ERR_INVALID_THEME_MODE", "Unknown theme mode \"$mode\"", null)
 
 internal class UsageTrackingException(cause: Throwable) :
   CodedException("Usage tracking failed: ${cause.message}", cause)
@@ -117,6 +122,16 @@ class RoolioCoreModule : Module() {
     }
 
     Function("isTrackingActive") { TrackingService.isRunning }
+
+    // Synchronous so the first render already uses the saved theme.
+    Function("getThemeMode") { AppTheme.mode(context).key }
+
+    Function("setThemeMode") { mode: String ->
+      AppTheme.setMode(context, ThemeMode.from(mode) ?: throw InvalidThemeModeException(mode))
+    }
+
+    // The phone's own setting, which the in-app theme doesn't change.
+    Function("isSystemDark") { AppTheme.isSystemDark(context) }
   }
 
   // Runs `block` on the tracker's thread, where all budget and usage state lives.
