@@ -87,29 +87,40 @@
             android:textSize="14sp"
             android:visibility="gone" />
 
-        <Button
-            android:id="@+id/roolio_pause_close"
-            style="@style/RoolioPauseButton"
+        <!--
+          Choices from quietest to strongest: borrowing a period, a little more,
+          then stop. Stopping sits at the bottom, nearest the thumb, so a stray
+          tap as the card appears lands on the safe choice. The optional choices
+          carry the gap below them, so the spacing holds when they're hidden.
+        -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
             android:layout_marginTop="20dp"
-            android:background="@drawable/roolio_pause_button_filled"
-            android:text="@string/roolio_pause_close"
-            android:textColor="@color/roolio_pause_on_primary" />
+            android:orientation="vertical">
 
-        <!-- Choices from strongest to quietest: stop, a little more, then borrowing a period. -->
-        <Button
-            android:id="@+id/roolio_pause_extra"
-            style="@style/RoolioPauseButton"
-            android:layout_marginTop="8dp"
-            android:background="@drawable/roolio_pause_button_tonal"
-            android:textColor="@color/roolio_pause_on_surface"
-            android:visibility="gone" />
+            <Button
+                android:id="@+id/roolio_pause_use_period"
+                style="@style/RoolioPauseButton"
+                android:layout_marginBottom="8dp"
+                android:background="@drawable/roolio_pause_button_text"
+                android:textColor="@color/roolio_pause_primary"
+                android:visibility="gone" />
 
-        <Button
-            android:id="@+id/roolio_pause_use_period"
-            style="@style/RoolioPauseButton"
-            android:layout_marginTop="8dp"
-            android:background="@drawable/roolio_pause_button_text"
-            android:textColor="@color/roolio_pause_primary"
-            android:visibility="gone" />
+            <Button
+                android:id="@+id/roolio_pause_extra"
+                style="@style/RoolioPauseButton"
+                android:layout_marginBottom="8dp"
+                android:background="@drawable/roolio_pause_button_tonal"
+                android:textColor="@color/roolio_pause_on_surface"
+                android:visibility="gone" />
+
+            <Button
+                android:id="@+id/roolio_pause_close"
+                style="@style/RoolioPauseButton"
+                android:background="@drawable/roolio_pause_button_filled"
+                android:text="@string/roolio_pause_close"
+                android:textColor="@color/roolio_pause_on_primary" />
+        </LinearLayout>
     </LinearLayout>
 </ScrollView>

@@ -1,7 +1,7 @@
 ---
 // A static copy of the pause screen's card (roolio_pause_screen.xml), with
-// its real wording. The choices run from strongest to quietest: stop, a
-// little more, then borrowing from tomorrow.
+// its real wording. The choices run from quietest to strongest: borrowing
+// from tomorrow, a little more, then stop at the bottom.
 import Logo from "../Logo.astro";
 import AppTile from "./AppTile.astro";
 
@@ -23,9 +23,9 @@ const { app, color, title, borrowLabel } = Astro.props;
   <AppTile name={app} color={color} size={52} />
   <p class="title">{title}</p>
   <div class="choices">
-    <span class="choice filled">Got it</span>
-    <span class="choice tonal">5 more minutes</span>
     <span class="choice text">{borrowLabel}</span>
+    <span class="choice tonal">5 more minutes</span>
+    <span class="choice filled">Got it</span>
   </div>
 </div>
 

@@ -61,7 +61,7 @@ Kotlin owns all data and enforcement, and React Native is the UI. Read this map 
 - Rollover ceiling and borrow cap are counted in periods (any whole number 0–7 for every user, 1 by default). 0 turns each off.
 - Edits apply immediately and never change past periods. Changing a budget's period while it owes time needs a `BorrowedChoice`: `clear` or `keep`.
 - A notification comes 5 minutes and 1 minute before every pause, only while the app is on screen. A choice on the pause screen counts as warning for the time it gives, so "5 more minutes" gets only the 1-minute alert.
-- The pause screen only decides when to stop an app and never changes the numbers. Its choices are "Close app", "5 more minutes" and "Use [next period]'s time".
+- The pause screen only decides when to stop an app and never changes the numbers. Its choices, from top to bottom, are "Use [next period]'s time", "5 more minutes" and "Got it", which closes the app. "Got it" sits at the bottom, nearest the thumb.
 - Exempt apps are never counted, listed or paused: the dialer, system Settings, launchers and Roolio itself.
 - Privacy: all data stays on the device, with no accounts, network or analytics. The only permissions are Usage Access, Display over other apps and notifications (no Accessibility service).
 

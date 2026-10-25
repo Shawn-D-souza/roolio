@@ -142,7 +142,7 @@ internal object PauseEnforcer {
     front = null
   }
 
-  /** "Close app". */
+  /** "Got it". */
   fun onClose() {
     val shown = paused ?: return
     paused = null

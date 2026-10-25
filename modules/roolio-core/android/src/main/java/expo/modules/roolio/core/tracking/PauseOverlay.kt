@@ -56,7 +56,7 @@ private val HOME_REASONS = setOf("homekey", "recentapps", "fs_gesture")
  * The pause screen: a card over the dimmed home screen, in a window over
  * other apps (Display over other apps). By the time it shows, the paused app
  * is already closed, so dismissing it (Back, a tap outside the card, Home or
- * Recents) is the same as "Close app": reopening the app shows it again.
+ * Recents) is the same as "Got it": reopening the app shows it again.
  *
  * The window covers the whole screen, so the home screen behind can't be
  * tapped into while it's up.
@@ -123,7 +123,7 @@ internal class PauseOverlay(
     handler.post { if (root != null) startHome() }
   }
 
-  /** "Close app": the user is home already, unless `goHome` says otherwise. */
+  /** "Got it": the user is home already, unless `goHome` says otherwise. */
   fun close(goHome: Boolean) {
     handler.post {
       if (goHome) startHome()
@@ -439,7 +439,7 @@ private fun Button.bindChoice(choice: PauseChoice?, onChoose: (KeepGoing) -> Uni
   setOnClickListener { onChoose(choice.keepGoing) }
 }
 
-/** The pause screen's root: the dim behind the card. Back closes it, like "Close app". */
+/** The pause screen's root: the dim behind the card. Back closes it, like "Got it". */
 private class PauseRoot(context: Context, private val onBack: () -> Unit) : FrameLayout(context) {
   // Typed loosely so the class loads before Android 13.
   private var backDispatcher: Any? = null
