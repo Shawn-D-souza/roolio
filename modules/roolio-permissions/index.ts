@@ -29,6 +29,15 @@ export function markNotificationsDeclined(): void {
   RoolioPermissionsModule.markNotificationsDeclined();
 }
 
+/** Whether the welcome screen was finished on this install. */
+export function hasSeenWelcome(): boolean {
+  return RoolioPermissionsModule.hasSeenWelcome();
+}
+
+export function markWelcomeSeen(): void {
+  RoolioPermissionsModule.markWelcomeSeen();
+}
+
 export function getNotificationPermissionAsync(): Promise<NotificationPermission> {
   return RoolioPermissionsModule.getNotificationPermissionAsync();
 }

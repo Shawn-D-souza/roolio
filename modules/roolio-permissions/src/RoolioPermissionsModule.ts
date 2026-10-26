@@ -1,9 +1,9 @@
-import { NativeModule, requireNativeModule } from 'expo';
+import { NativeModule, requireNativeModule } from "expo";
 import {
   NotificationPermission,
   PermissionName,
   PermissionStatus,
-} from './RoolioPermissions.types';
+} from "./RoolioPermissions.types";
 
 declare class RoolioPermissionsModule extends NativeModule<{}> {
   getStatus(): PermissionStatus;
@@ -11,6 +11,8 @@ declare class RoolioPermissionsModule extends NativeModule<{}> {
   markSetupCompleted(): void;
   hasDeclinedNotifications(): boolean;
   markNotificationsDeclined(): void;
+  hasSeenWelcome(): boolean;
+  markWelcomeSeen(): void;
   getNotificationPermissionAsync(): Promise<NotificationPermission>;
   requestNotificationPermissionAsync(): Promise<NotificationPermission>;
   openSettings(permission: PermissionName, hint: string): void;
@@ -18,4 +20,6 @@ declare class RoolioPermissionsModule extends NativeModule<{}> {
   openBatterySettings(hint: string): void;
 }
 
-export default requireNativeModule<RoolioPermissionsModule>('RoolioPermissions');
+export default requireNativeModule<RoolioPermissionsModule>(
+  "RoolioPermissions",
+);

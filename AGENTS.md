@@ -20,16 +20,17 @@ Kotlin owns all data and enforcement, and React Native is the UI. Read this map 
   - `tracking/PauseEnforcer.kt` decides when to pause, `PauseOverlay.kt` draws the pause screen with native views (`res/layout/roolio_pause_screen.xml`, `res/values*/roolio_pause_*.xml`), and `PauseCopy.kt` writes its text.
   - `theme/AppTheme.kt`: the saved theme choice (light, dark or system), kept in SharedPreferences so it can be read as the app starts. It sets AppCompat's night mode for the app's screens and dialogs, and gives the pause screen a context in the chosen theme. `RoolioCorePackage.kt` applies it when the app process starts, before any JS.
   - `tracking/SystemApps.kt`: exempt apps. `tracking/Notifications.kt`: the tracking, permission and time-left notifications. Native strings are in `res/values/strings.xml`.
-- `modules/roolio-permissions/`: status of Usage Access, Display over other apps and notifications, plus opening the Settings screen for each. It also checks battery optimization (`isBatteryUnrestricted`, `openBatterySettings`), which isn't an onboarding step: Settings shows it in `src/components/settings/BatterySetting.tsx`.
+- `modules/roolio-permissions/`: status of Usage Access, Display over other apps and notifications, plus opening the Settings screen for each. It also checks battery optimization (`isBatteryUnrestricted`, `openBatterySettings`), which isn't an onboarding step: Settings shows it in `src/components/settings/BatterySetting.tsx`. Its saved preferences include whether the welcome screen was finished (`hasSeenWelcome`, `markWelcomeSeen`).
 - `modules/installed-apps/`: installed apps (exempt ones left out), app icons and uninstall checks.
-- `src/app/`: routes. `(tabs)/index.tsx` is Home, `(tabs)/settings.tsx` is Settings, `add-app.tsx` picks apps, `budget/[packageName].tsx` is app detail, editing and removal, and `permissions.tsx` is onboarding. `_layout.tsx` guards routes with `Stack.Protected` on `needsSetup`.
+- `src/app/`: routes. `(tabs)/index.tsx` is Home, `(tabs)/settings.tsx` is Settings, `add-app.tsx` picks apps, `budget/[packageName].tsx` is app detail, editing and removal, `permissions.tsx` is onboarding, and `welcome.tsx` is the one-time welcome screen before it. `_layout.tsx` guards routes with `Stack.Protected` on `showWelcome` and `needsSetup`.
 - `src/budgets/`: the JS side of budgets.
   - `repository.ts` wraps the native module, converts ms to minutes and emits change events.
   - `rules.ts` holds limits, presets, steps and defaults. `format.ts` formats durations and labels.
   - `types.ts` defines `BudgetWithUsage`, the shape screens use. `events.ts` is the change-event bus.
 - `src/hooks/budgets/`: `useBudgets` loads the Home list and removes budgets of uninstalled apps, and `useBudget` loads one app. Both use `useBudgetQuery`, which reloads after a write, on returning to the foreground and at midnight.
-- `src/permissions/`: `PermissionsProvider` (permission status, `needsSetup`, and the notifications step's "Not now" and "Don't ask again", which is saved in `roolio-permissions`) and `steps.tsx` (onboarding content).
+- `src/permissions/`: `PermissionsProvider` (permission status, `needsSetup`, `showWelcome`, and the notifications step's "Not now" and "Don't ask again", which is saved in `roolio-permissions`) and `steps.tsx` (onboarding content).
 - `src/components/<screen>/`: components grouped by screen, with shared ones in `ui/`.
+- `src/components/welcome/`: the welcome screen's short story of one app's time yesterday, today and tomorrow (`StoryPicture`) and the three steps that light up with it (`StorySteps`). Both read one looping clock in `storyClock.ts`, run by the native driver, and animate only transform and opacity, so no JS runs per frame. When animations are reduced, the clock holds still at `REST`.
 - `src/theme/`: `tokens.ts` holds colors, spacing and radius, and `ThemeProvider.tsx` provides `useAppTheme()`. The theme mode is saved and applied natively (`getThemeMode`, `setThemeMode` in `roolio-core`). `systemColorScheme` is the phone's own theme, for the sketches of system screens in `src/components/permissions/SystemMock.tsx`.
 - `src/usage/useUsageSync.ts`: starts or stops tracking when Usage Access changes.
 - `DESIGN.md`: the app icon spec.
@@ -50,6 +51,7 @@ Kotlin owns all data and enforcement, and React Native is the UI. Read this map 
 - Setting limits (budget 1 min to the period max, ceiling and cap 0–7) are checked in both `src/budgets/rules.ts` and `Budgets.kt`. Keep them in step.
 - The pause screen's colors in `res/values*/roolio_pause_colors.xml` copy `src/theme/tokens.ts`. Keep them in step.
 - The website's colors in `site/src/styles/tokens.css` also copy `src/theme/tokens.ts`, and its mock-ups in `site/src/components/mock/` copy the Home card and the pause screen. Keep them in step.
+- The welcome screen's picture in `src/components/welcome/StoryPicture.tsx` draws time like the Home card: grey for what's gone, from the right, banked time on the left and borrowed time on the right. Keep them in step.
 - The privacy policy in `site/src/pages/privacy.astro` describes what the app stores, its permissions, Android backups and Google Play. Update it, and its date, when any of those change (for example when billing lands).
 
 ### Budget rules

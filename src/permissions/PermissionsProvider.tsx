@@ -12,8 +12,10 @@ import {
   getPermissionStatus,
   hasCompletedSetup,
   hasDeclinedNotifications,
+  hasSeenWelcome,
   markNotificationsDeclined,
   markSetupCompleted,
+  markWelcomeSeen,
   PermissionStatus,
 } from "../../modules/roolio-permissions";
 
@@ -22,6 +24,10 @@ import {
 const RECHECK_DELAY_MS = 600;
 
 type PermissionsContextType = {
+  // True until a new user taps "Get started" on the welcome screen, which
+  // comes before setup. Never true for anyone who has set Roolio up before.
+  showWelcome: boolean;
+  finishWelcome: () => void;
   status: PermissionStatus;
   // True when a required permission is missing, or notifications are missing
   // and the user hasn't chosen "Not now" since the app was opened, or "Don't
@@ -65,6 +71,9 @@ export function PermissionsProvider({ children }: { children: ReactNode }) {
   const [setupCompleted, setSetupCompleted] = useState(
     () => hasCompletedSetup() || hasRequiredPermissions(status),
   );
+  const [showWelcome, setShowWelcome] = useState(
+    () => !setupCompleted && !hasSeenWelcome(),
+  );
 
   // Remember it across launches, so a later missing permission reads as
   // "turned off" rather than "never set up".
@@ -93,6 +102,11 @@ export function PermissionsProvider({ children }: { children: ReactNode }) {
     };
   }, [refresh]);
 
+  const finishWelcome = useCallback(() => {
+    markWelcomeSeen();
+    setShowWelcome(false);
+  }, []);
+
   const deferNotifications = useCallback(
     () => setNotificationsDeferred(true),
     [],
@@ -105,6 +119,8 @@ export function PermissionsProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo(
     () => ({
+      showWelcome,
+      finishWelcome,
       status,
       needsSetup:
         !hasRequiredPermissions(status) ||
@@ -116,6 +132,8 @@ export function PermissionsProvider({ children }: { children: ReactNode }) {
       refresh,
     }),
     [
+      showWelcome,
+      finishWelcome,
       status,
       setupCompleted,
       notificationsDeferred,
