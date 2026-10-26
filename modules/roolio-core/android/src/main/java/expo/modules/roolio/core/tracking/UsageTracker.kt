@@ -190,6 +190,33 @@ internal object UsageTracker {
     return total
   }
 
+  /**
+   * Like [usage], but split by local day: visible ms of each of `packageNames`
+   * per day from `fromDay` up to `toDay` (exclusive), as day -> package -> ms.
+   * Runs on the tracker thread, after [prepare].
+   */
+  fun dailyUsage(packageNames: Collection<String>, fromDay: String, toDay: String): Map<String, Map<String, Long>> {
+    val days = store.dailyUsage(packageNames, fromDay, toDay)
+    // Time not saved yet, if the last save failed.
+    for ((day, byPackage) in pending) {
+      for (packageName in packageNames) {
+        val ms = byPackage[packageName] ?: continue
+        val forDay = days.getOrPut(day) { HashMap() }
+        forDay[packageName] = (forDay[packageName] ?: 0L) + ms
+      }
+    }
+    for (packageName in packageNames) {
+      settled.since(packageName)?.let { since -> addTime(days, packageName, since, settledUntil) }
+      // The unsettled tail is the last few seconds, counted on the day it ends.
+      tailTime[packageName]?.let { ms ->
+        val forDay = days.getOrPut(Periods.dayKey(tailEnd)) { HashMap() }
+        forDay[packageName] = (forDay[packageName] ?: 0L) + ms
+      }
+      tail.since(packageName)?.let { since -> addTime(days, packageName, since, tailEnd) }
+    }
+    return days.filterKeys { it >= fromDay && it < toDay }
+  }
+
   private fun overlap(start: Long, end: Long, from: Long, to: Long): Long =
     (minOf(end, to) - maxOf(start, from)).coerceAtLeast(0L)
 

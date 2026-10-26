@@ -3,7 +3,7 @@ import { SITE } from "../config";
 import BaseLayout from "../layouts/BaseLayout.astro";
 
 // Change this whenever the policy's wording changes.
-const updated = new Date("2026-10-21T00:00:00Z");
+const updated = new Date("2026-10-26T00:00:00Z");
 const updatedLabel = updated.toLocaleDateString("en-US", {
   year: "numeric",
   month: "long",
@@ -138,6 +138,11 @@ const summary = [
       <section aria-labelledby="sharing">
         <h2 id="sharing">Sharing and selling</h2>
         <p>We don't sell, rent or share your data with anyone. We don't have it to share.</p>
+        <p>
+          If you tap Share on the Stats screen, Roolio makes a picture of that summary on your phone and hands it to the
+          app you pick in Android's share menu. Nothing is sent unless you choose where it goes, and Roolio itself still
+          makes no network requests.
+        </p>
       </section>
 
       <section aria-labelledby="choices">

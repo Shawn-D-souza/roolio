@@ -19,9 +19,14 @@ import expo.modules.roolio.core.theme.AppTheme
 import expo.modules.roolio.core.theme.ThemeMode
 import expo.modules.roolio.core.tracking.TrackingService
 import expo.modules.roolio.core.tracking.UsageTracker
+import expo.modules.roolio.core.ui.Remembered
+import expo.modules.roolio.core.ui.ScreenMemory
 
 internal class InvalidThemeModeException(mode: String) :
   CodedException("ERR_INVALID_THEME_MODE", "Unknown theme mode \"$mode\"", null)
+
+internal class InvalidScreenChoiceException(value: String) :
+  CodedException("ERR_INVALID_SCREEN_CHOICE", "Unknown screen choice \"$value\"", null)
 
 internal class UsageTrackingException(cause: Throwable) :
   CodedException("Usage tracking failed: ${cause.message}", cause)
@@ -76,6 +81,31 @@ class RoolioCoreModule : Module() {
       }
     }
 
+    AsyncFunction("getStatsAsync") { fromDay: String, toDay: String, promise: Promise ->
+      onTracker(promise) {
+        val stats = Budgets.stats(fromDay, toDay)
+        mapOf(
+          "usage" to
+            stats.usage.flatMap { (day, byPackage) ->
+              byPackage.map { (packageName, ms) ->
+                mapOf("packageName" to packageName, "day" to day, "usedMs" to ms.toDouble())
+              }
+            },
+          "periods" to
+            stats.periods.map { period ->
+              periodToMap(period.row) +
+                mapOf(
+                  "budgetId" to period.row.budgetId.toDouble(),
+                  "open" to period.open,
+                  "usedMs" to period.usedMs.toDouble(),
+                  "bankedOutMs" to period.row.bankedOutMs?.toDouble(),
+                  "borrowedMs" to period.borrowedMs.toDouble(),
+                )
+            },
+        )
+      }
+    }
+
     AsyncFunction("createAppBudgetAsync") {
       app: NewAppRecord,
       settings: BudgetSettingsRecord,
@@ -106,6 +136,10 @@ class RoolioCoreModule : Module() {
       }
     }
 
+    AsyncFunction("getFirstDayOfWeekAsync") { promise: Promise ->
+      onTracker(promise) { Budgets.firstDayOfWeek() }
+    }
+
     AsyncFunction("setFirstDayOfWeekAsync") { day: Int, promise: Promise ->
       onTracker(promise) {
         Budgets.setFirstDayOfWeek(day)
@@ -132,6 +166,25 @@ class RoolioCoreModule : Module() {
 
     // The phone's own setting, which the in-app theme doesn't change.
     Function("isSystemDark") { AppTheme.isSystemDark(context) }
+
+    // Synchronous so the first render opens where the user left off.
+    Function("getScreenMemory") {
+      mapOf(
+        "tab" to ScreenMemory.get(context, Remembered.TAB),
+        "statsRange" to ScreenMemory.get(context, Remembered.STATS_RANGE),
+        "statsChart" to ScreenMemory.get(context, Remembered.STATS_CHART),
+      )
+    }
+
+    Function("rememberTab") { tab: String -> remember(Remembered.TAB, tab) }
+
+    Function("rememberStatsRange") { kind: String -> remember(Remembered.STATS_RANGE, kind) }
+
+    Function("rememberStatsChart") { view: String -> remember(Remembered.STATS_CHART, view) }
+  }
+
+  private fun remember(item: Remembered, value: String) {
+    if (!ScreenMemory.set(context, item, value)) throw InvalidScreenChoiceException(value)
   }
 
   // Runs `block` on the tracker's thread, where all budget and usage state lives.

@@ -3,6 +3,7 @@ import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useAppTheme } from "../../theme/ThemeProvider";
 import { radius } from "../../theme/tokens";
+import { rememberTab } from "../../../modules/roolio-core";
 
 export default function TabLayout() {
   const { colors } = useAppTheme();
@@ -30,6 +31,7 @@ export default function TabLayout() {
     >
       <Tabs.Screen
         name="index"
+        listeners={{ focus: () => rememberTab("home") }}
         options={{
           title: "Home",
           tabBarIcon: ({ focused }) => (
@@ -41,6 +43,29 @@ export default function TabLayout() {
             >
               <Ionicons
                 name={focused ? "home" : "home-outline"}
+                size={22}
+                color={
+                  focused ? colors.onPrimaryContainer : colors.onSurfaceVariant
+                }
+              />
+            </View>
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="stats"
+        listeners={{ focus: () => rememberTab("stats") }}
+        options={{
+          title: "Stats",
+          tabBarIcon: ({ focused }) => (
+            <View
+              style={[
+                styles.iconContainer,
+                focused && { backgroundColor: colors.primaryContainer },
+              ]}
+            >
+              <Ionicons
+                name={focused ? "stats-chart" : "stats-chart-outline"}
                 size={22}
                 color={
                   focused ? colors.onPrimaryContainer : colors.onSurfaceVariant

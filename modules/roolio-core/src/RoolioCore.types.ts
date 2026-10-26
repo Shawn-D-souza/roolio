@@ -8,6 +8,19 @@ export type BorrowedChoice = "clear" | "keep";
 /** Roolio's theme: the phone's setting, or always light or dark. */
 export type ThemeMode = "system" | "light" | "dark";
 
+/** The tabs Roolio reopens on. Settings isn't kept. */
+export type RememberedTab = "home" | "stats";
+
+/** The charts Stats can show time used with. */
+export type StatsChartView = "ring" | "stacked" | "daily";
+
+/** Where the user left Roolio's screens; null where nothing is saved. */
+export type ScreenMemory = {
+  tab: RememberedTab | null;
+  statsRange: BudgetPeriod | null;
+  statsChart: StatsChartView | null;
+};
+
 /** The values of a budget the user chooses. */
 export type BudgetSettings = {
   period: BudgetPeriod;
@@ -78,6 +91,31 @@ export type PastPeriod = PeriodFields & {
   /** Time used past the period's own time, owed by later periods. */
   borrowedMs: number;
   closedAt: number;
+};
+
+/** One app's time on one local day, in whole minutes (in ms). */
+export type DailyUsage = {
+  packageName: string;
+  /** "YYYY-MM-DD". */
+  day: string;
+  usedMs: number;
+};
+
+/** A period that starts in a stats range: closed, or the current one so far. */
+export type StatsPeriod = PeriodFields & {
+  budgetId: number;
+  open: boolean;
+  usedMs: number;
+  /** Banked time carried out; null while open. */
+  bankedOutMs: number | null;
+  /** Time used past the period's own time, owed by later periods. */
+  borrowedMs: number;
+};
+
+export type StatsResult = {
+  usage: DailyUsage[];
+  /** Oldest first. */
+  periods: StatsPeriod[];
 };
 
 export type BudgetRecord = BudgetSettings & {

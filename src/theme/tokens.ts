@@ -26,6 +26,8 @@ export type AppColors = {
   errorContainer: string;
   onErrorContainer: string;
   scrim: string;
+  // Apps in the Stats charts, most used first; the rest share `outline`.
+  series: readonly [string, string, string];
 };
 
 /**
@@ -72,7 +74,16 @@ export type AppColors = {
  *    fill alone. Give them a 1px `outline` border or an elevation/shadow so
  *    they read as separate.
  *
- * 5. IF YOU CHANGE ANY VALUE
+ * 5. CHART SERIES
+ *    `series` tells apps apart in the Stats charts: violet, blue, magenta.
+ *    Hues near banked (green), borrowed (rust), low (amber) and error (red)
+ *    are left out, so an app never reads as one of those. Each set passed the
+ *    dataviz palette validator against `surfaceContainer`, all pairs, in its
+ *    own mode: worst colorblind ΔE 15.7 light / 11.4 dark (target 8), normal
+ *    vision 25.1 / 21.0 (floor 15), every color 3:1 or better. Re-run it on any
+ *    change. Charts always name their apps too.
+ *
+ * 6. IF YOU CHANGE ANY VALUE
  *    Re-check contrast for every text/background pair it touches before
  *    shipping. Do not eyeball it; the palette passes AA today because the
  *    pairs were measured.
@@ -108,6 +119,7 @@ export const colors: Record<ColorScheme, AppColors> = {
     // Overlay behind dialogs and sheets. Dark mode needs a stronger value,
     // since dimming an already-dark page barely shows.
     scrim: "rgba(0, 0, 0, 0.4)",
+    series: ["#721DAF", "#338DDF", "#E63E84"],
   },
   dark: {
     background: "#121218",
@@ -135,6 +147,7 @@ export const colors: Record<ColorScheme, AppColors> = {
     errorContainer: "#93000A",
     onErrorContainer: "#FFDAD6",
     scrim: "rgba(0, 0, 0, 0.6)",
+    series: ["#B167F7", "#2F72B1", "#D02572"],
   },
 };
 

@@ -240,6 +240,24 @@ internal class BudgetStore(private val database: RoolioDatabase) {
       )
       .use { cursor -> cursor.map { it.toPeriod() } }
 
+  /**
+   * Closed periods of every budget that start from `fromDay` up to `toDay`
+   * (exclusive), oldest first, each with the time it borrowed.
+   */
+  fun closedPeriodsStartingIn(fromDay: String, toDay: String): List<Pair<PeriodRow, Long>> =
+    db
+      .rawQuery(
+        """
+        SELECT p.*,
+          (SELECT COALESCE(SUM(b.amount_ms), 0) FROM borrows b WHERE b.period_id = p.id) AS borrowed_ms
+        FROM periods p
+        WHERE p.closed_at IS NOT NULL AND p.start_day >= ? AND p.start_day < ?
+        ORDER BY p.start_day, p.id
+        """,
+        arrayOf(fromDay, toDay),
+      )
+      .use { cursor -> cursor.map { it.toPeriod() to it.long("borrowed_ms") } }
+
   fun insertPeriod(
     budgetId: Long,
     period: BudgetPeriod,

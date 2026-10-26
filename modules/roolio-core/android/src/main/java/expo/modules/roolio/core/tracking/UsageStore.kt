@@ -106,6 +106,30 @@ internal class UsageStore(private val database: RoolioDatabase) {
       .use { cursor -> if (cursor.moveToFirst()) cursor.getLong(0) else 0L }
   }
 
+  // Saved foreground time of `packageNames` per day from `fromDay` up to
+  // `toDay` (exclusive), as day -> package -> ms.
+  fun dailyUsage(packageNames: Collection<String>, fromDay: String, toDay: String): HashMap<String, HashMap<String, Long>> {
+    val days = HashMap<String, HashMap<String, Long>>()
+    if (packageNames.isEmpty()) return days
+    val placeholders = packageNames.joinToString(", ") { "?" }
+    val args = ArrayList<String>(packageNames.size + 2)
+    args.addAll(packageNames)
+    args.add(fromDay)
+    args.add(toDay)
+    readableDatabase
+      .rawQuery(
+        "SELECT day, package_name, foreground_ms FROM daily_usage " +
+          "WHERE package_name IN ($placeholders) AND day >= ? AND day < ?",
+        args.toTypedArray(),
+      )
+      .use { cursor ->
+        while (cursor.moveToNext()) {
+          days.getOrPut(cursor.getString(0)) { HashMap() }[cursor.getString(1)] = cursor.getLong(2)
+        }
+      }
+    return days
+  }
+
   fun deletePackages(packageNames: Collection<String>) {
     if (packageNames.isEmpty()) return
     val db = writableDatabase

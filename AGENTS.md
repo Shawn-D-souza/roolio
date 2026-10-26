@@ -14,21 +14,25 @@ Kotlin owns all data and enforcement, and React Native is the UI. Read this map 
   - `budgets/Budgets.kt`: the budget rules. Lists, creates, updates and deletes budgets, rolls them forward (resets), and works out pause status and "keep going" choices.
   - `budgets/Ledger.kt`: pure math for available, banked and borrowed time, caps and repayment.
   - `budgets/Stops.kt`: the pause screen's stopping points. `budgets/Periods.kt`: period starts and ends in local time, and `YYYY-MM-DD` day keys.
+  - `Budgets.stats` gives the Stats screen each budgeted app's usage per day (`UsageTracker.dailyUsage`) and the periods that start in a range.
   - `budgets/BudgetStore.kt`: SQL for budgets, periods, borrows and settings. `db/RoolioDatabase.kt`: the schema.
   - `tracking/UsageTracker.kt`: measures foreground time from UsageStats events and owns the one background thread. `Visibility.kt` decides what counts as visible time, and `UsageStore.kt` holds daily usage and the restart checkpoint.
   - `tracking/TrackingService.kt`: a foreground service that ticks only while the screen is on. `BootReceiver.kt` restarts it after a reboot.
   - `tracking/PauseEnforcer.kt` decides when to pause, `PauseOverlay.kt` draws the pause screen with native views (`res/layout/roolio_pause_screen.xml`, `res/values*/roolio_pause_*.xml`), and `PauseCopy.kt` writes its text.
   - `theme/AppTheme.kt`: the saved theme choice (light, dark or system), kept in SharedPreferences so it can be read as the app starts. It sets AppCompat's night mode for the app's screens and dialogs, and gives the pause screen a context in the chosen theme. `RoolioCorePackage.kt` applies it when the app process starts, before any JS.
+  - `ui/ScreenMemory.kt`: where the user left Roolio's screens (the last of Home and Stats, and Stats' range and chart), in the same SharedPreferences, read synchronously so the first render already uses it (`getScreenMemory`, `rememberTab`, `rememberStatsRange`, `rememberStatsChart`). Values are saved by name, never by position.
   - `tracking/SystemApps.kt`: exempt apps. `tracking/Notifications.kt`: the tracking, permission and time-left notifications. Native strings are in `res/values/strings.xml`.
 - `modules/roolio-permissions/`: status of Usage Access, Display over other apps and notifications, plus opening the Settings screen for each. It also checks battery optimization (`isBatteryUnrestricted`, `openBatterySettings`), which isn't an onboarding step: Settings shows it in `src/components/settings/BatterySetting.tsx`. Its saved preferences include whether the welcome screen was finished (`hasSeenWelcome`, `markWelcomeSeen`).
 - `modules/installed-apps/`: installed apps (exempt ones left out), app icons and uninstall checks.
-- `src/app/`: routes. `(tabs)/index.tsx` is Home, `(tabs)/settings.tsx` is Settings, `add-app.tsx` picks apps, `budget/[packageName].tsx` is app detail, editing and removal, `permissions.tsx` is onboarding, and `welcome.tsx` is the one-time welcome screen before it. `_layout.tsx` guards routes with `Stack.Protected` on `showWelcome` and `needsSetup`.
+- `src/app/`: routes. `(tabs)/index.tsx` is Home, `(tabs)/stats.tsx` is Stats, `(tabs)/settings.tsx` is Settings, `add-app.tsx` picks apps, `budget/[packageName].tsx` is app detail, editing and removal, `permissions.tsx` is onboarding, and `welcome.tsx` is the one-time welcome screen before it. `+native-intent.tsx` picks the tab Roolio opens on. `_layout.tsx` guards routes with `Stack.Protected` on `showWelcome` and `needsSetup`.
 - `src/budgets/`: the JS side of budgets.
   - `repository.ts` wraps the native module, converts ms to minutes and emits change events.
   - `rules.ts` holds limits, presets, steps and defaults. `format.ts` formats durations and labels.
   - `types.ts` defines `BudgetWithUsage`, the shape screens use. `events.ts` is the change-event bus.
 - `src/hooks/budgets/`: `useBudgets` loads the Home list and removes budgets of uninstalled apps, and `useBudget` loads one app. Both use `useBudgetQuery`, which reloads after a write, on returning to the foreground and at midnight.
 - `src/permissions/`: `PermissionsProvider` (permission status, `needsSetup`, `showWelcome`, and the notifications step's "Not now" and "Don't ask again", which is saved in `roolio-permissions`) and `steps.tsx` (onboarding content).
+- `src/stats/`: the JS side of Stats. `ranges.ts` works out days, weeks and months as local `YYYY-MM-DD` ranges and their labels, `summary.ts` adds up a range, and `repository.ts` loads it from `getStats()`. `src/hooks/stats/useStats.ts` reloads it like `useBudgetQuery`. Roolio reopens on the tab the user last left: `src/app/+native-intent.tsx` sends a launch from the launcher to `/stats` before any screen is built, and links to a screen still open it, and Stats on their last range and chart, but always at the current day, week or month.
+- `src/components/stats/`: the Stats screen. A sideways swipe anywhere on it, outside the chart card, goes to the previous or next range (touch responder handlers in `stats.tsx`). The range label opens `RangePicker`, a calendar of days, weeks (a row each) or months up to today. Dates before Roolio counted anything are greyed but can still be picked, swiped to or stepped to, and show `NoData`: where stats start, with a button to go there. `TimeBankStatement` is a receipt of what the range banked, borrowed, paid back and used (only the range, never balances right now). `ShareButton` turns everything under the range controls into one image for the share sheet (`react-native-view-shot`, `expo-sharing`). `UsageViews` pages (swipe or arrows) between three charts of time used: `AppRing` (each app's share, shown first), and `DailyChart` stacked by app or in one color. The three most used apps get the `series` colors from `tokens.ts` (validated, never banked green, borrowed rust, low amber or error red), and the rest share one grey "Other apps" slice. `AppBreakdown` shows each app's time, and `BankBorrowBalance` each app's banked time to the left and borrowed time to the right of a center line. Stats are plain data: no budget lines, warnings or streaks.
 - `src/components/<screen>/`: components grouped by screen, with shared ones in `ui/`.
 - `src/components/welcome/`: the welcome screen's short story of one app's time yesterday, today and tomorrow (`StoryPicture`) and the three steps that light up with it (`StorySteps`). Both read one looping clock in `storyClock.ts`, run by the native driver, and animate only transform and opacity, so no JS runs per frame. When animations are reduced, the clock holds still at `REST`.
 - `src/theme/`: `tokens.ts` holds colors, spacing and radius, and `ThemeProvider.tsx` provides `useAppTheme()`. The theme mode is saved and applied natively (`getThemeMode`, `setThemeMode` in `roolio-core`). `systemColorScheme` is the phone's own theme, for the sketches of system screens in `src/components/permissions/SystemMock.tsx`.
@@ -39,6 +43,7 @@ Kotlin owns all data and enforcement, and React Native is the UI. Read this map 
 ### How it fits together
 
 - Nothing runs at midnight. Every read and write first rolls budgets forward: it closes ended periods, banks leftover time and repays borrowed time. Periods are keyed by local date, so each period start gets exactly one reset.
+- Stats count usage by day, so any range is exact. Banked and borrowed time belong to a budget's period, so a period counts toward a range when it starts in it and is no longer than it: a weekly budget's banking shows in Week and Month, never in one day. Each app's day is rounded down to whole minutes on its own, so a week of days can add up to a minute or two less than the period's usage.
 - Enforcement doesn't need JS. `TrackingService` (started by `syncTracking()` or at boot) runs `UsageTracker` and `PauseEnforcer`.
 - `PauseEnforcer` checks every budgeted app on screen, not only the one in front, because picture-in-picture and split-screen time counts too. An app that isn't in front (a small window, picture-in-picture) can't be closed without Accessibility, so the pause screen pauses its media (a media pause key, plus audio focus) and comes back 5 s after each dismissal while the window stays open.
 - `PauseEnforcer` also sends the time-left alerts, 5 minutes and 1 minute before each pause. `Stops.alertDue` decides them, and the open period's `alert_stop_ms` and `alert_left_ms` record the last one sent, so each stopping point gets each alert once.
@@ -51,8 +56,9 @@ Kotlin owns all data and enforcement, and React Native is the UI. Read this map 
 - Setting limits (budget 1 min to the period max, ceiling and cap 0–7) are checked in both `src/budgets/rules.ts` and `Budgets.kt`. Keep them in step.
 - The pause screen's colors in `res/values*/roolio_pause_colors.xml` copy `src/theme/tokens.ts`. Keep them in step.
 - The website's colors in `site/src/styles/tokens.css` also copy `src/theme/tokens.ts`, and its mock-ups in `site/src/components/mock/` copy the Home card and the pause screen. Keep them in step.
+- The Stats screen's `BankBorrowBalance` and statement colors follow the Home card: green for banked on the left, rust for borrowed on the right.
 - The welcome screen's picture in `src/components/welcome/StoryPicture.tsx` draws time like the Home card: grey for what's gone, from the right, banked time on the left and borrowed time on the right. Keep them in step.
-- The privacy policy in `site/src/pages/privacy.astro` describes what the app stores, its permissions, Android backups and Google Play. Update it, and its date, when any of those change (for example when billing lands).
+- The privacy policy in `site/src/pages/privacy.astro` describes what the app stores, its permissions, sharing from Stats, Android backups and Google Play. Update it, and its date, when any of those change (for example when billing lands).
 
 ### Budget rules
 
@@ -72,7 +78,7 @@ Kotlin owns all data and enforcement, and React Native is the UI. Read this map 
 
 - Premium: the paywall, the 3-app free limit, and locks on weekly and monthly budgets.
 - Group and total-phone budgets. The schema's `kind` column already supports them.
-- The history screen. `getHistory()` already exists.
+- A history screen of one budget's past periods. `getHistory()` already exists.
 - The first-day-of-week setting in the UI. `setFirstDayOfWeek()` already exists.
 
 ## Expo has changed — do not trust your training data

@@ -61,6 +61,17 @@ internal data class BudgetStatus(
 
 internal data class PastPeriod(val row: PeriodRow, val borrowedMs: Long)
 
+/** A period in a stats range, closed or still open, with its usage and borrowing so far. */
+internal data class StatsPeriod(val row: PeriodRow, val open: Boolean, val usedMs: Long, val borrowedMs: Long)
+
+/** Usage and budget periods of a range of days, for the stats screen. */
+internal data class Stats(
+  // day -> package -> ms, in whole minutes per app per day.
+  val usage: Map<String, Map<String, Long>>,
+  // Periods that start in the range, oldest first.
+  val periods: List<StatsPeriod>,
+)
+
 /** Where an app stands against the stopping points of the pause screen. */
 internal data class PauseStatus(
   val budgetId: Long,
@@ -140,6 +151,34 @@ internal object Budgets {
     val borrowed = store.borrowedMs(periods.map { it.id })
     return periods.map { PastPeriod(it, borrowed[it.id] ?: 0L) }
   }
+
+  /**
+   * Usage of every budgeted app per day from `fromDay` up to `toDay`
+   * (exclusive), and the periods of every budget that start in that range.
+   * Each app's day is rounded down to whole minutes on its own, so a period's
+   * days can add up to a minute or two less than the period's usage.
+   */
+  fun stats(fromDay: String, toDay: String, now: Long = System.currentTimeMillis()): Stats {
+    val statuses = list(now)
+    val packageNames = statuses.flatMap { status -> status.apps.map { it.packageName } }
+    val usage =
+      UsageTracker.dailyUsage(packageNames, fromDay, toDay).mapValues { (_, byPackage) ->
+        byPackage.mapValues { (_, ms) -> Ledger.countedMs(ms) }
+      }
+    val closed =
+      store.closedPeriodsStartingIn(fromDay, toDay).map { (row, borrowedMs) ->
+        StatsPeriod(row, open = false, usedMs = row.usedMs ?: 0L, borrowedMs = borrowedMs)
+      }
+    val open =
+      statuses
+        .map { it.current }
+        .filter { it.row.startDay >= fromDay && it.row.startDay < toDay }
+        .map { StatsPeriod(it.row, open = true, usedMs = it.usedMs, borrowedMs = it.borrowedMs) }
+    return Stats(usage, (closed + open).sortedBy { it.row.startDay })
+  }
+
+  /** The first day of the week, as a java.util.Calendar day. */
+  fun firstDayOfWeek(): Int = store.firstDayOfWeek()
 
   /**
    * Where `packageName`'s budget stands against its stopping points, or null
