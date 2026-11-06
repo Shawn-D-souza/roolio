@@ -8,7 +8,6 @@ import { currentPeriodLabel, formatDuration } from "../../budgets/format";
 import { timeLeftState } from "../../budgets/rules";
 import { AppIcon } from "../addApp/AppIcon";
 import { bankSlots, UsageBar } from "../budget/UsageBar";
-import { pipWidth } from "../budget/PeriodPips";
 import {
   BorrowAhead,
   borrowAheadLabel,
@@ -51,7 +50,7 @@ export const BudgetCard = memo(function BudgetCard({
 
   // Labels for the two ends of the row, each under the pips it describes.
   // Banked is told while there are pips for it, even when empty, so an
-  // outlined pip never stands unexplained.
+  // empty pip never stands unexplained.
   const slots = bankSlots(budget);
   const banked =
     slots === 0
@@ -62,8 +61,6 @@ export const BudgetCard = memo(function BudgetCard({
           ? "Banked time used"
           : "Nothing banked yet";
   const ahead = budget.upcoming.length > 0 ? borrowAheadSummary(budget) : null;
-  // Banked pips on the left of the bar, borrow pips on the right: one size.
-  const pips = pipWidth(slots + budget.upcoming.length);
 
   const label = [
     budget.appName,
@@ -143,9 +140,9 @@ export const BudgetCard = memo(function BudgetCard({
 
         <View style={styles.bars}>
           <View style={styles.periodBar}>
-            <UsageBar budget={budget} pipWidth={pips} />
+            <UsageBar budget={budget} />
           </View>
-          <BorrowAhead budget={budget} pipWidth={pips} />
+          <BorrowAhead budget={budget} />
         </View>
 
         <View style={styles.ends}>
@@ -245,7 +242,9 @@ const styles = StyleSheet.create({
     // Keeps the line, and the card's height, when there's nothing to say.
     minHeight: END_LINE_HEIGHT,
   },
+  // Long labels wrap at large font sizes instead of running off the card.
   endText: {
+    flexShrink: 1,
     fontSize: 14,
     lineHeight: END_LINE_HEIGHT,
     fontVariant: ["tabular-nums"],

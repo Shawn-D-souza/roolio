@@ -1,16 +1,21 @@
 import { StyleSheet, View } from "react-native";
 import { useAppTheme } from "../../theme/ThemeProvider";
 import { radius, space } from "../../theme/tokens";
+import { MAX_PERIOD_COUNT } from "../../budgets/rules";
 import type { BudgetWithUsage } from "../../budgets/types";
-import { BAR_HEIGHT, PeriodPips, pipWidth as widthFor } from "./PeriodPips";
+import { BAR_HEIGHT, PeriodPips } from "./PeriodPips";
 
 // How many pips banked time gets: the rollover ceiling, or more if a lowered
-// budget left more banked than that many periods now hold.
+// budget left more banked than that many periods now hold, up to the most any
+// setting allows. Past that the pips just stay full until enough is used.
 export function bankSlots(budget: BudgetWithUsage) {
   if (budget.budgetMinutes <= 0) return 0;
-  return Math.max(
-    budget.rolloverCeiling,
-    Math.ceil(budget.bankedInMinutes / budget.budgetMinutes),
+  return Math.min(
+    Math.max(
+      budget.rolloverCeiling,
+      Math.ceil(budget.bankedInMinutes / budget.budgetMinutes),
+    ),
+    MAX_PERIOD_COUNT,
   );
 }
 
@@ -22,14 +27,7 @@ export function bankSlots(budget: BudgetWithUsage) {
 // used. Banked time drains from its pips once the budget is gone. Low and out
 // of time are told by the text next to it, not the bar. Decorative: that text
 // says the same thing for screen readers.
-export function UsageBar({
-  budget,
-  pipWidth,
-}: {
-  budget: BudgetWithUsage;
-  // Shared with any pips beside the bar, so both sides match.
-  pipWidth?: number;
-}) {
+export function UsageBar({ budget }: { budget: BudgetWithUsage }) {
   const { colors } = useAppTheme();
   const slots = bankSlots(budget);
   const own = budget.ownBudgetMinutes;
@@ -48,11 +46,7 @@ export function UsageBar({
 
   return (
     <View style={styles.row}>
-      <PeriodPips
-        pips={bankedPips}
-        color={colors.banked}
-        width={pipWidth ?? widthFor(slots)}
-      />
+      <PeriodPips pips={bankedPips} color={colors.banked} />
       <View
         style={[styles.bar, { backgroundColor: colors.primary }]}
         importantForAccessibility="no-hide-descendants"

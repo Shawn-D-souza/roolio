@@ -29,7 +29,7 @@ const spent = budget > 0 ? clamp((repaid + used) / budget) : 1;
     banked.length > 0 && (
       <span class="pips">
         {banked.map((fill) => (
-          <span class:list={["pip", "banked", { filled: fill > 0 }]} style={`--fill: ${clamp(fill)}`}>
+          <span class="pip banked" style={`--fill: ${clamp(fill)}`}>
             <span class="fill" />
           </span>
         ))}
@@ -43,7 +43,7 @@ const spent = budget > 0 ? clamp((repaid + used) / budget) : 1;
     ahead.length > 0 && (
       <span class="pips">
         {ahead.map((fill) => (
-          <span class:list={["pip", "borrowed", { filled: fill > 0 }]} style={`--fill: ${clamp(fill)}`}>
+          <span class="pip borrowed" style={`--fill: ${clamp(fill)}`}>
             <span class="fill" />
           </span>
         ))}
@@ -62,16 +62,18 @@ const spent = budget > 0 ? clamp((repaid + used) / budget) : 1;
 
   .pips {
     display: flex;
-    gap: 4px;
+    flex: none;
+    width: 40px;
+    gap: 2px;
   }
 
   .pip {
     display: block;
-    width: 22px;
+    flex: 1;
     height: var(--bar-height);
-    border: 1.5px solid var(--color-outline);
-    border-radius: var(--radius-full);
+    border-radius: 3px;
     overflow: hidden;
+    background: var(--color-outline-variant);
   }
 
   .pip .fill {
@@ -80,16 +82,8 @@ const spent = budget > 0 ? clamp((repaid + used) / budget) : 1;
     height: 100%;
   }
 
-  .banked.filled {
-    border-color: var(--color-banked);
-  }
-
   .banked .fill {
     background: var(--color-banked);
-  }
-
-  .borrowed.filled {
-    border-color: var(--color-borrowed);
   }
 
   .borrowed .fill {

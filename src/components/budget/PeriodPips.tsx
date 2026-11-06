@@ -1,6 +1,5 @@
 import { StyleSheet, View } from "react-native";
 import { useAppTheme } from "../../theme/ThemeProvider";
-import { radius } from "../../theme/tokens";
 
 // Height of usage bars and the pips beside them.
 export const BAR_HEIGHT = 12;
@@ -11,32 +10,17 @@ export type Pip = {
   filled: number;
 };
 
-// Pips shrink as there are more of them, counting both sides of a usage bar,
-// so a high rollover ceiling and borrow cap still leave room for the bar.
-export function pipWidth(count: number) {
-  if (count <= 4) return 22;
-  if (count <= 8) return 14;
-  return 8;
-}
-
-// One outlined capsule per whole period, filled in `color` by how much it
-// holds. Outlined, rather than tinted, so they read as other periods, apart
-// from the current period's bar. Decorative: the text near it says the same.
-export function PeriodPips({
-  pips,
-  color,
-  width,
-}: {
-  pips: Pip[];
-  color: string;
-  width: number;
-}) {
+// One segment per whole period, filled in `color` by how much it holds. The
+// segments share one fixed width, so a usage bar beside them stays the same
+// size however many periods there are. Decorative: the text near it says the
+// same.
+export function PeriodPips({ pips, color }: { pips: Pip[]; color: string }) {
   const { colors } = useAppTheme();
   if (pips.length === 0) return null;
 
   return (
     <View
-      style={[styles.pips, { gap: width > 8 ? 4 : 3 }]}
+      style={styles.pips}
       importantForAccessibility="no-hide-descendants"
       accessibilityElementsHidden
     >
@@ -45,10 +29,7 @@ export function PeriodPips({
         return (
           <View
             key={pip.key}
-            style={[
-              styles.pip,
-              { width, borderColor: filled > 0 ? color : colors.outline },
-            ]}
+            style={[styles.pip, { backgroundColor: colors.outlineVariant }]}
           >
             <View
               style={[
@@ -66,11 +47,13 @@ export function PeriodPips({
 const styles = StyleSheet.create({
   pips: {
     flexDirection: "row",
+    width: 40,
+    gap: 2,
   },
   pip: {
+    flex: 1,
     height: BAR_HEIGHT,
-    borderRadius: radius.full,
-    borderWidth: 1.5,
+    borderRadius: 3,
     overflow: "hidden",
   },
   fill: {

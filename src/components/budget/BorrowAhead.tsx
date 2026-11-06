@@ -52,13 +52,7 @@ function nextPeriodLeft(budget: BudgetWithUsage) {
 // The upcoming periods that borrowed time comes out of, one pip each, filled
 // in rust by how much of each is already taken. Sits right of the usage bar.
 // Nothing here changes until time is used or a period ends.
-export function BorrowAhead({
-  budget,
-  pipWidth,
-}: {
-  budget: BudgetWithUsage;
-  pipWidth: number;
-}) {
+export function BorrowAhead({ budget }: { budget: BudgetWithUsage }) {
   const { colors } = useAppTheme();
   return (
     <PeriodPips
@@ -70,7 +64,6 @@ export function BorrowAhead({
             : 0,
       }))}
       color={colors.borrowed}
-      width={pipWidth}
     />
   );
 }

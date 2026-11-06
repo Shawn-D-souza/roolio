@@ -105,7 +105,7 @@ npx expo install --fix      # fix incompatible package versions
 
 The developer builds releases, so don't run production builds. When a task is completely done, run `npm run check` once, not after every edit, and fix what it finds. Then say what to build.
 
-When the developer asks, you may build and install the development variant (`com.shawndza.roolio.dev`) and use `adb` to test and screenshot it on the developer's connected phone. Only change that variant: never touch the data or settings of `com.shawndza.roolio`, and put the phone's screen size, density and font scale back when you finish.
+When the developer asks, you may build and install the development variant (`com.shawndza.roolio.dev`) and use `adb` to test and screenshot it on the developer's connected phone. Only change that variant: never touch the data or settings of `com.shawndza.roolio`. The screenshot script puts the phone back by itself. If you change the phone's settings by hand, put them back yourself.
 
 Screenshots are a separate step, not part of finishing a task. Only run them when the developer asks, and don't build or touch the phone after coding otherwise:
 
