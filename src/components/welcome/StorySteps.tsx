@@ -98,9 +98,11 @@ export function StorySteps({ clock }: { clock: Animated.Value }) {
 }
 
 const styles = StyleSheet.create({
-  // Shrinks to its widest row, so the left-aligned rows sit centered.
+  // Shrinks to its widest row, so the left-aligned rows sit centered. Long
+  // rows wrap instead of running past the screen's margins.
   steps: {
     alignSelf: "center",
+    maxWidth: "100%",
     gap: space.lg,
   },
   step: {

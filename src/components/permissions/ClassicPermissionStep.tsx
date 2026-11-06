@@ -36,7 +36,7 @@ export function ClassicPermissionStep({
       {progress}
       <ScrollView
         contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
+        persistentScrollbar
       >
         {content.illustration}
 

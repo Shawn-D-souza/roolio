@@ -22,11 +22,8 @@ export default function WelcomeScreen() {
     <SafeAreaView
       style={[styles.screen, { backgroundColor: colors.background }]}
     >
-      {/* Scrolls only at large font sizes. */}
-      <ScrollView
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
-      >
+      {/* Scrolls only at large font sizes and on short screens. */}
+      <ScrollView contentContainerStyle={styles.content} persistentScrollbar>
         <StoryPicture clock={clock} />
 
         {/* Banked and borrowed in the picture's colors. The words say it

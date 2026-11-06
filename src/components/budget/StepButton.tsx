@@ -63,16 +63,17 @@ export function StepButton({
       delayLongPress={HOLD_DELAY_MS}
       disabled={disabled}
       hitSlop={4}
-      android_ripple={{ color: colors.outlineVariant, borderless: true }}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
       accessibilityState={{ disabled }}
-      style={[
+      style={({ pressed }) => [
         styles.button,
         {
           width: size,
           height: size,
-          backgroundColor: colors.surfaceContainerHighest,
+          backgroundColor: pressed
+            ? colors.outlineVariant
+            : colors.surfaceContainerHighest,
           opacity: disabled ? 0.38 : 1,
         },
       ]}

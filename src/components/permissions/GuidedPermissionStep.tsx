@@ -180,7 +180,7 @@ function Intro({
       {progress}
       <ScrollView
         contentContainerStyle={styles.introContent}
-        showsVerticalScrollIndicator={false}
+        persistentScrollbar
       >
         <View style={styles.illustration}>{intro.illustration}</View>
 
@@ -270,7 +270,7 @@ function Guide({
 
       <ScrollView
         contentContainerStyle={styles.guideContent}
-        showsVerticalScrollIndicator={false}
+        persistentScrollbar
       >
         <Text
           style={[styles.guideTitle, { color: colors.onSurface }]}

@@ -8,6 +8,9 @@ const ARROW_WIDTH = 240;
 const ARROW_HEIGHT = 210;
 const ARROW_CURVE = "M 44 10 C 30 80 116 106 156 136";
 const ARROW_HEAD = "M 149 119 L 156 136 L 138 134";
+// How far the curve reaches up from the bottom of the screen.
+const ARROW_REACH = 200;
+const TEXT_LIFT = 100;
 
 export function EmptyState() {
   const { colors } = useAppTheme();
@@ -16,6 +19,7 @@ export function EmptyState() {
     <View style={styles.container}>
       
        <View style={styles.content}>
+        <View style={styles.spaceAbove} />
         <MaterialIcons
           name="hourglass-empty"
           size={64}
@@ -28,6 +32,7 @@ export function EmptyState() {
         <Text style={[styles.body, { color: colors.onSurfaceVariant }]}>
           Pick an app you want to spend less time on, and set your daily limit.
         </Text>
+        <View style={styles.spaceBelow} />
       </View>
 
       <Svg
@@ -64,10 +69,17 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: 35,
-    paddingBottom: 100, 
+    paddingBottom: TEXT_LIFT,
+  },
+  spaceAbove: {
+    flex: 1,
+  },
+  // Centers the text, but on short screens lifts it clear of the arrow.
+  spaceBelow: {
+    flex: 1,
+    minHeight: ARROW_REACH - TEXT_LIFT + space.md,
   },
   headline: {
     fontSize: 26,
