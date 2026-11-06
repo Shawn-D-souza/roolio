@@ -37,6 +37,8 @@ Kotlin owns all data and enforcement, and React Native is the UI. Read this map 
 - `src/components/welcome/`: the welcome screen's short story of one app's time yesterday, today and tomorrow (`StoryPicture`) and the three steps that light up with it (`StorySteps`). Both read one looping clock in `storyClock.ts`, run by the native driver, and animate only transform and opacity, so no JS runs per frame. When animations are reduced, the clock holds still at `REST`.
 - `src/theme/`: `tokens.ts` holds colors, spacing and radius, and `ThemeProvider.tsx` provides `useAppTheme()`. The theme mode is saved and applied natively (`getThemeMode`, `setThemeMode` in `roolio-core`). `systemColorScheme` is the phone's own theme, for the sketches of system screens in `src/components/permissions/SystemMock.tsx`.
 - `src/usage/useUsageSync.ts`: starts or stops tracking when Usage Access changes.
+- `app.config.js`: with `APP_VARIANT=development` (`npm start`, `npm run android`, the `development` EAS profile), the app becomes Roolio Dev (`com.shawndza.roolio.dev`), so it installs next to the Google Play version. Without it, `app.json` is used unchanged.
+- `scripts/screenshots/`: `capture.mjs` screenshots Roolio Dev on the connected phone, changing the screen shape and theme through `adb`, and `seed.mjs` holds the sample data it uses. Images go to `screenshots/<device>/<theme>/<shot>.png`, listed in `screenshots/INDEX.md` (ignored by git). See Commands for when to run it.
 - `DESIGN.md`: the app icon spec.
 - `site/`: the public website (Astro, static), a separate npm project with its own `package.json` and README. It's left out of the app's TypeScript, ESLint and Metro. `src/pages/privacy.astro` is the privacy policy, `src/components/home/` holds the homepage sections, `src/components/mock/` holds HTML copies of app screens, and `src/config.ts` holds the developer name, the contact email and the Google Play link.
 
@@ -95,14 +97,27 @@ Use `bunx` instead of `npx` if the project uses bun (`bun.lock` present).
 
 ```bash
 npx expo install <package>  # ALWAYS use instead of npm/yarn/pnpm/bun add — resolves SDK-compatible versions
-npx expo start              # start the dev server
-npx expo lint               # lint
-npx tsc --noEmit            # typecheck
+npm start                   # start the dev server for Roolio Dev
+npm run check               # typecheck, then lint
 npx expo-doctor             # diagnose dependency and config issues
 npx expo install --fix      # fix incompatible package versions
 ```
 
-The developer builds the app (Gradle/Expo) and runs lint and typecheck themselves. Don't run builds, lint, typecheck or `adb`. When a task is done, say what to build and check instead.
+The developer builds releases, so don't run production builds. When a task is completely done, run `npm run check` once, not after every edit, and fix what it finds. Then say what to build.
+
+When the developer asks, you may build and install the development variant (`com.shawndza.roolio.dev`) and use `adb` to test and screenshot it on the developer's connected phone. Only change that variant: never touch the data or settings of `com.shawndza.roolio`, and put the phone's screen size, density and font scale back when you finish.
+
+Screenshots are a separate step, not part of finishing a task. Only run them when the developer asks, and don't build or touch the phone after coding otherwise:
+
+```bash
+npm run screenshots -- --list             # list the screens and screen shapes
+npm run screenshots -- --shot settings    # one screen, or every screen starting with that name
+npm run screenshots -- --restore          # put the phone back if a run was cut off
+```
+
+- Choose by screen first: run only the screens the task changed, and keep all screen shapes unless told otherwise. A run of every screen takes a long time and keeps the phone busy, so only do that when the developer asks for one.
+- Viewing images is what uses up tokens. Look only at the images you need, starting with `tall-360x800` (a common shape), then `large-text` and `wide-672x840`. Check `tiny-320x569` and `small-360x640` for broken screens, but these phones are rare, so don't bend the design around them.
+- Check that the run ended with "The phone is back to normal". If it ended with "Couldn't confirm the phone is back to normal", run `--restore` and tell the developer.
 
 ## Navigation & Routing
 
@@ -129,8 +144,9 @@ EAS_LOCAL_BUILD_WORKINGDIR=$HOME/.eas-build npx eas-cli@latest build --platform 
 ## Rules
 
 - If `ios/` and `android/` directories do not exist, they are generated (Continuous Native Generation). Never create or edit them by hand — configure native behavior in `app.json` and config plugins.
-- Expo Go only includes its bundled native modules. After adding a library with native code, the app needs a development build: `npx expo run:ios|android` locally, or `eas build --profile development`.
+- Expo Go only includes its bundled native modules. After adding a library with native code, the app needs a development build: `npm run android` locally, or `eas build --profile development`.
 - Prefer recommended Expo modules over third-party libraries, and check your available skills before adding dependencies. Docs: https://docs.expo.dev/versions/latest/index.md
+- Commits and pull requests get no Claude Code attribution: no `Co-Authored-By` lines, session links or "Generated with Claude Code".
 
 ## Code conventions
 
