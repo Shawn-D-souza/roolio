@@ -4,7 +4,11 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useAppTheme } from "../theme/ThemeProvider";
 import { useReduceMotion } from "../hooks/useReduceMotion";
 import { usePermissions } from "../permissions/PermissionsProvider";
-import { getStepContent, PERMISSION_STEPS } from "../permissions/steps";
+import {
+  FIRST_SETUP_STEPS,
+  getStepContent,
+  PERMISSION_STEPS,
+} from "../permissions/steps";
 import { StepDots } from "../components/permissions/StepDots";
 import { GuidedPermissionStep } from "../components/permissions/GuidedPermissionStep";
 import { ClassicPermissionStep } from "../components/permissions/ClassicPermissionStep";
@@ -28,9 +32,9 @@ export default function PermissionsScreen() {
   const {
     status,
     setupCompleted,
-    notificationsDeferred,
-    deferNotifications,
-    declineNotifications,
+    deferredSteps,
+    deferStep,
+    declineStep,
     refresh,
   } = usePermissions();
 
@@ -39,7 +43,7 @@ export default function PermissionsScreen() {
   const [returning] = useState(setupCompleted);
 
   const currentStep = PERMISSION_STEPS.find(
-    (id) => !status[id] && !(id === "notifications" && notificationsDeferred),
+    (id) => !status[id] && !deferredSteps[id],
   );
 
   // Whether Android will still show the notification dialog. Assume yes until known.
@@ -150,9 +154,9 @@ export default function PermissionsScreen() {
   // missing permission to fix, so a step count would mislead.
   const progress = returning ? undefined : (
     <StepDots
-      count={PERMISSION_STEPS.length}
-      current={PERMISSION_STEPS.indexOf(currentStep)}
-      done={PERMISSION_STEPS.map((id) => status[id])}
+      count={FIRST_SETUP_STEPS.length}
+      current={FIRST_SETUP_STEPS.indexOf(currentStep)}
+      done={FIRST_SETUP_STEPS.map((id) => status[id])}
     />
   );
 
@@ -195,8 +199,8 @@ export default function PermissionsScreen() {
             onAction={
               content.opensSettings ? openSettings : requestNotifications
             }
-            onNotNow={deferNotifications}
-            onDontAskAgain={declineNotifications}
+            onNotNow={() => deferStep(content.permission)}
+            onDontAskAgain={() => declineStep(content.permission)}
           />
         )}
       </Animated.View>

@@ -29,6 +29,15 @@ export function markNotificationsDeclined(): void {
   RoolioPermissionsModule.markNotificationsDeclined();
 }
 
+/** Whether the user chose "Don't ask again" for battery use. */
+export function hasDeclinedBattery(): boolean {
+  return RoolioPermissionsModule.hasDeclinedBattery();
+}
+
+export function markBatteryDeclined(): void {
+  RoolioPermissionsModule.markBatteryDeclined();
+}
+
 /** Whether the welcome screen was finished on this install. */
 export function hasSeenWelcome(): boolean {
   return RoolioPermissionsModule.hasSeenWelcome();
@@ -59,16 +68,10 @@ export function openPermissionSettings(
 }
 
 /**
- * Whether Roolio is exempt from battery optimization. Some phones stop its
- * tracking to save battery otherwise, and apps then aren't counted or paused.
- */
-export function isBatteryUnrestricted(): boolean {
-  return RoolioPermissionsModule.isBatteryUnrestricted();
-}
-
-/**
  * Opens the Settings screen where Roolio's battery use can be set to
- * Unrestricted, and shows `hint` there like `openPermissionSettings`.
+ * Unrestricted, and shows `hint` there like `openPermissionSettings`. Unlike
+ * it, Roolio doesn't come back by itself if battery use is already
+ * unrestricted, because the user is only checking it.
  */
 export function openBatterySettings(hint: string): void {
   RoolioPermissionsModule.openBatterySettings(hint);

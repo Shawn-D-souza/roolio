@@ -11,12 +11,13 @@ declare class RoolioPermissionsModule extends NativeModule<{}> {
   markSetupCompleted(): void;
   hasDeclinedNotifications(): boolean;
   markNotificationsDeclined(): void;
+  hasDeclinedBattery(): boolean;
+  markBatteryDeclined(): void;
   hasSeenWelcome(): boolean;
   markWelcomeSeen(): void;
   getNotificationPermissionAsync(): Promise<NotificationPermission>;
   requestNotificationPermissionAsync(): Promise<NotificationPermission>;
   openSettings(permission: PermissionName, hint: string): void;
-  isBatteryUnrestricted(): boolean;
   openBatterySettings(hint: string): void;
 }
 

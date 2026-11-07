@@ -1,42 +1,16 @@
-import { useCallback, useEffect, useState } from "react";
-import {
-  AppState,
-  Platform,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
-import {
-  isBatteryUnrestricted,
-  openBatterySettings,
-} from "../../../modules/roolio-permissions";
+import { openBatterySettings } from "../../../modules/roolio-permissions";
+import { usePermissions } from "../../permissions/PermissionsProvider";
+import { BATTERY_SETTINGS_HINT } from "../../permissions/steps";
 import { useAppTheme } from "../../theme/ThemeProvider";
 import { space, radius } from "../../theme/tokens";
-
-// Android 12 moved battery use onto the app's info page.
-const SETTINGS_HINT =
-  Platform.OS === "android" && Platform.Version >= 31
-    ? "Tap Battery, then choose Unrestricted"
-    : "Choose All apps, find Roolio, then choose Don't optimize";
 
 // Always shown, so the user can check the setting again after changing it.
 export function BatterySetting() {
   const { colors } = useAppTheme();
-  const [unrestricted, setUnrestricted] = useState(isBatteryUnrestricted);
-
-  // The setting is changed in Settings, outside the app.
-  const refresh = useCallback(
-    () => setUnrestricted(isBatteryUnrestricted()),
-    [],
-  );
-  useEffect(() => {
-    const subscription = AppState.addEventListener("change", (state) => {
-      if (state === "active") refresh();
-    });
-    return () => subscription.remove();
-  }, [refresh]);
+  const { status } = usePermissions();
+  const unrestricted = status.batteryUnrestricted;
 
   const title = unrestricted
     ? "Battery use: Unrestricted"
@@ -63,7 +37,7 @@ export function BatterySetting() {
         ]}
       >
         <Pressable
-          onPress={() => openBatterySettings(SETTINGS_HINT)}
+          onPress={() => openBatterySettings(BATTERY_SETTINGS_HINT)}
           accessibilityRole="button"
           accessibilityLabel={`${title} ${body}`}
           accessibilityHint="Opens battery settings"

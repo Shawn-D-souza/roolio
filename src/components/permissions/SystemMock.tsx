@@ -168,6 +168,50 @@ export function MockSwitchPage({
   );
 }
 
+/** A system page of radio choices, with the first one highlighted and chosen. */
+export function MockChoicePage({
+  title,
+  choices,
+}: {
+  title: string;
+  choices: string[];
+}) {
+  const system = useSystemColors();
+  return (
+    <MockScreen title={title}>
+      {choices.map((choice, index) => {
+        const row = (
+          <View style={styles.choiceRow}>
+            <View
+              style={[
+                styles.radio,
+                { borderColor: index === 0 ? system.switchOn : system.secondary },
+              ]}
+            >
+              {index === 0 && (
+                <View
+                  style={[
+                    styles.radioDot,
+                    { backgroundColor: system.switchOn },
+                  ]}
+                />
+              )}
+            </View>
+            <Text style={[styles.rowLabel, { color: system.text }]}>
+              {choice}
+            </Text>
+          </View>
+        );
+        return index === 0 ? (
+          <Highlight key={choice}>{row}</Highlight>
+        ) : (
+          <View key={choice}>{row}</View>
+        );
+      })}
+    </MockScreen>
+  );
+}
+
 // Roolio's annotation ring around the thing to tap.
 function Highlight({ children }: { children: ReactNode }) {
   const { colors } = useAppTheme();
@@ -254,6 +298,26 @@ const styles = StyleSheet.create({
     width: 20,
     height: 20,
     borderRadius: 10,
+  },
+  choiceRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: space.md,
+    paddingVertical: space.md,
+    paddingHorizontal: space.sm,
+  },
+  radio: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  radioDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
   },
   highlight: {
     borderWidth: 2,

@@ -25,14 +25,12 @@ import expo.modules.kotlin.modules.ModuleDefinition
 private const val PREFS_NAME = "roolio_permissions"
 private const val KEY_SETUP_COMPLETED = "setup_completed"
 private const val KEY_NOTIFICATIONS_DECLINED = "notifications_declined"
+private const val KEY_BATTERY_DECLINED = "battery_declined"
 private const val KEY_WELCOME_SEEN = "welcome_seen"
 
 // How often, and for how long, to check whether the user granted the permission in Settings.
 private const val WATCH_INTERVAL_MS = 400L
 private const val WATCH_TIMEOUT_MS = 3 * 60 * 1000L
-
-// Not one of the onboarding permissions, but opened and watched the same way.
-private const val BATTERY_UNRESTRICTED = "batteryUnrestricted"
 
 internal class PermissionsUnavailableException :
   CodedException("The permissions manager is unavailable")
@@ -43,7 +41,7 @@ internal class UnknownPermissionException(permission: String) :
 internal class SettingsUnavailableException(permission: String) :
   CodedException("Could not open the settings screen for \"$permission\"")
 
-// Checks Roolio's three permissions and opens the system screens that grant them.
+// Checks Roolio's permissions and opens the system screens that grant them.
 class RoolioPermissionsModule : Module() {
   private val context: Context
     get() = requireNotNull(appContext.reactContext) { "React context is unavailable" }
@@ -79,6 +77,7 @@ class RoolioPermissionsModule : Module() {
         "usageAccess" to hasUsageAccess(),
         "overlay" to Settings.canDrawOverlays(context),
         "notifications" to hasNotificationPermission(),
+        "batteryUnrestricted" to isBatteryUnrestricted(),
       )
     }
 
@@ -98,6 +97,15 @@ class RoolioPermissionsModule : Module() {
 
     Function("markNotificationsDeclined") {
       prefs().edit().putBoolean(KEY_NOTIFICATIONS_DECLINED, true).apply()
+    }
+
+    // Whether the user chose not to be asked about battery use again.
+    Function("hasDeclinedBattery") {
+      prefs().getBoolean(KEY_BATTERY_DECLINED, false)
+    }
+
+    Function("markBatteryDeclined") {
+      prefs().edit().putBoolean(KEY_BATTERY_DECLINED, true).apply()
     }
 
     // Whether the welcome screen was finished on this install.
@@ -139,19 +147,14 @@ class RoolioPermissionsModule : Module() {
       mainHandler.post { startWatching(permission) }
     }
 
-    // Whether Android leaves Roolio's tracking running when it saves battery.
-    Function("isBatteryUnrestricted") {
-      isBatteryUnrestricted()
-    }
-
     // Opens the screen where Roolio's battery use can be set to Unrestricted.
     // When it already is, the user is only checking it, so don't bring Roolio
     // back on its own.
     Function("openBatterySettings") { hint: String ->
       val alreadyUnrestricted = isBatteryUnrestricted()
-      openSettings(BATTERY_UNRESTRICTED, settingsIntents(BATTERY_UNRESTRICTED))
+      openSettings("batteryUnrestricted", settingsIntents("batteryUnrestricted"))
       showToast(hint)
-      if (!alreadyUnrestricted) mainHandler.post { startWatching(BATTERY_UNRESTRICTED) }
+      if (!alreadyUnrestricted) mainHandler.post { startWatching("batteryUnrestricted") }
     }
 
     OnActivityEntersForeground {
@@ -168,7 +171,7 @@ class RoolioPermissionsModule : Module() {
       "usageAccess" -> hasUsageAccess()
       "overlay" -> Settings.canDrawOverlays(context)
       "notifications" -> hasNotificationPermission()
-      BATTERY_UNRESTRICTED -> isBatteryUnrestricted()
+      "batteryUnrestricted" -> isBatteryUnrestricted()
       else -> throw UnknownPermissionException(permission)
     }
 
@@ -193,7 +196,7 @@ class RoolioPermissionsModule : Module() {
         )
       // Android 12+ sets battery use on the app's info page. Older versions
       // only have the list of apps, and some OEMs only the info page.
-      BATTERY_UNRESTRICTED ->
+      "batteryUnrestricted" ->
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
           listOf(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, packageUri()))
         } else {
@@ -230,6 +233,7 @@ class RoolioPermissionsModule : Module() {
     return mode == AppOpsManager.MODE_ALLOWED
   }
 
+  // Whether Android leaves Roolio's tracking running when it saves battery.
   private fun isBatteryUnrestricted(): Boolean {
     val power = context.getSystemService(Context.POWER_SERVICE) as PowerManager
     return power.isIgnoringBatteryOptimizations(context.packageName)

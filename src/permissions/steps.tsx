@@ -9,9 +9,11 @@ import type { NumberedStep } from "../components/permissions/NumberedSteps";
 import { UsageAccessIllustration } from "../components/permissions/UsageAccessIllustration";
 import {
   MockAppRow,
+  MockChoicePage,
   MockScreen,
   MockSwitchPage,
 } from "../components/permissions/SystemMock";
+import type { OptionalPermission } from "./PermissionsProvider";
 
 type StepBase = {
   required: boolean;
@@ -24,10 +26,12 @@ type StepBase = {
 // Why and how on two screens; see GuidedPermissionStep.
 export type GuidedStep = StepBase & GuidedStepContent & { layout: "guided" };
 
-// One screen with a single action. Used for notifications, where Android's own
-// dialog explains itself and no how-to is needed.
+// One screen with a single action, for the steps a user can skip. No how-to is
+// needed: Android's notification dialog explains itself, and the battery step
+// has one short thing to choose.
 export type ClassicStep = StepBase & {
   layout: "classic";
+  permission: OptionalPermission;
   illustration: ReactNode;
   title: string;
   body: string;
@@ -47,13 +51,28 @@ type StepOptions = {
   canAskNotifications: boolean;
 };
 
-// Below Android 13 notifications need no permission, so the step is skipped.
-const NOTIFICATIONS_NEED_PERMISSION =
-  Platform.OS === "android" && Platform.Version >= 33;
+// A new user isn't shown the notifications step; see PermissionsProvider.
+export const FIRST_SETUP_STEPS: PermissionName[] = [
+  "usageAccess",
+  "overlay",
+  "batteryUnrestricted",
+];
 
-export const PERMISSION_STEPS: PermissionName[] = NOTIFICATIONS_NEED_PERMISSION
-  ? ["usageAccess", "overlay", "notifications"]
-  : ["usageAccess", "overlay"];
+export const PERMISSION_STEPS: PermissionName[] = [
+  ...FIRST_SETUP_STEPS,
+  "notifications",
+];
+
+// Android 12 moved battery use onto the app's info page.
+const BATTERY_ON_APP_PAGE = Platform.OS === "android" && Platform.Version >= 31;
+
+const BATTERY_CHOICES = BATTERY_ON_APP_PAGE
+  ? ["Unrestricted", "Optimized", "Restricted"]
+  : ["Don't optimize", "Optimize"];
+
+export const BATTERY_SETTINGS_HINT = BATTERY_ON_APP_PAGE
+  ? "Tap Battery, then choose Unrestricted"
+  : "Choose All apps, find Roolio, then choose Don't optimize";
 
 // Steps for permissions granted from a list of apps in Settings.
 function listSteps(screenTitle: string, switchLabel: string): NumberedStep[] {
@@ -201,9 +220,35 @@ export function getStepContent(
         },
       };
 
+    case "batteryUnrestricted":
+      return {
+        layout: "classic",
+        permission: "batteryUnrestricted",
+        required: false,
+        illustration: (
+          <MockChoicePage
+            title={
+              BATTERY_ON_APP_PAGE ? "App battery usage" : "Battery optimization"
+            }
+            choices={BATTERY_CHOICES}
+          />
+        ),
+        title: "Keep Roolio running",
+        body: `Some phones stop Roolio to save battery, so apps don't get counted or paused. Choose “${BATTERY_CHOICES[0]}” to keep it running.`,
+        note: {
+          icon: "battery-full",
+          text: "Roolio only checks your apps while your screen is on.",
+        },
+        actionLabel: "Open battery settings",
+        opensSettings: true,
+        settingsHint: BATTERY_SETTINGS_HINT,
+        stillOffHint: `Battery use isn't set to “${BATTERY_CHOICES[0]}” yet. You can change it any time from Roolio's Settings tab.`,
+      };
+
     case "notifications":
       return {
         layout: "classic",
+        permission: "notifications",
         required: false,
         illustration: <NotificationPreview />,
         title: "Know before time runs out",

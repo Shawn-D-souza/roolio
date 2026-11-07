@@ -5,6 +5,11 @@ export type PermissionStatus = {
   overlay: boolean;
   /** Always true below Android 13, where notifications need no permission. */
   notifications: boolean;
+  /**
+   * Exempt from battery optimization. Some phones stop Roolio's tracking to
+   * save battery otherwise, and apps then aren't counted or paused.
+   */
+  batteryUnrestricted: boolean;
 };
 
 export type PermissionName = keyof PermissionStatus;

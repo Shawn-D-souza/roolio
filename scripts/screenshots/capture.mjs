@@ -39,7 +39,9 @@ const THEMES = ["dark", "light"];
 const stats = (range, chart) => ({ prefs: { stats_range: range, stats_chart: chart, last_tab: "stats" }, link: "/stats" });
 
 // `perms`: "all", "required" (no notifications), "usage" (Usage Access only) or
-// "none". `setup` and `welcomeSeen` are the app's saved onboarding flags.
+// "none". `setup`, `welcomeSeen` and `batteryDeclined` are the app's saved
+// onboarding flags. Without `batteryDeclined`, the battery step would cover
+// every screen, because Roolio Dev's battery use isn't unrestricted by default.
 const SHOTS = [
   { name: "home-budgets", about: "Home with five budgets: banked, borrowed, weekly, monthly", link: "/", scroll: true },
   { name: "home-crowded", about: "Home with up to seven banked and seven borrow days", scenario: "crowded", link: "/", scroll: true },
@@ -59,11 +61,12 @@ const SHOTS = [
   { name: "welcome", about: "The one-time welcome screen (animated)", perms: "none", setup: false, welcomeSeen: false, moving: true },
   { name: "permissions-usage-access", about: "Setup: Usage Access step", perms: "none", setup: false },
   { name: "permissions-overlay", about: "Setup: Display over other apps step", perms: "usage", setup: false },
+  { name: "permissions-battery", about: "Battery step", perms: "required", batteryDeclined: false },
   { name: "permissions-notifications", about: "Setup: notifications step", perms: "required" },
   { name: "permissions-turned-off", about: "A permission turned off after setup", perms: "none" },
   { name: "pause-out", about: "Pause screen: out of time, can borrow", scenario: "pause-out", pause: true },
   { name: "pause-blocked", about: "Pause screen: blocked, only Got it", scenario: "pause-blocked", pause: true },
-].map((shot) => ({ scenario: "everyday", perms: "all", setup: true, welcomeSeen: true, prefs: {}, ...shot }));
+].map((shot) => ({ scenario: "everyday", perms: "all", setup: true, welcomeSeen: true, batteryDeclined: true, prefs: {}, ...shot }));
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -266,7 +269,8 @@ function writePrefs(theme, shot) {
     .join("");
   const permissions =
     `<boolean name="setup_completed" value="${shot.setup}" />` +
-    `<boolean name="welcome_seen" value="${shot.welcomeSeen}" />`;
+    `<boolean name="welcome_seen" value="${shot.welcomeSeen}" />` +
+    `<boolean name="battery_declined" value="${shot.batteryDeclined}" />`;
   shell(`run-as ${PACKAGE} mkdir -p shared_prefs`);
   writeAppFile("shared_prefs/roolio_core.xml", `<?xml version='1.0' encoding='utf-8' standalone='yes' ?><map>${core}</map>`);
   writeAppFile("shared_prefs/roolio_permissions.xml", `<?xml version='1.0' encoding='utf-8' standalone='yes' ?><map>${permissions}</map>`);
@@ -380,7 +384,7 @@ let appState = null;
 let seededScenario = null;
 
 async function prepare(shot, theme, device) {
-  const wanted = JSON.stringify([device.name, theme, shot.scenario, shot.perms, shot.setup, shot.welcomeSeen, shot.prefs]);
+  const wanted = JSON.stringify([device.name, theme, shot.scenario, shot.perms, shot.setup, shot.welcomeSeen, shot.batteryDeclined, shot.prefs]);
   if (wanted === appState) return;
   shell(`am force-stop ${PACKAGE}`);
   // A new install has no database until Roolio Dev first opens.
@@ -397,6 +401,8 @@ async function prepare(shot, theme, device) {
     seededScenario = shot.scenario;
   }
   setPermissions(shot.perms);
+  // The battery step only shows while Roolio Dev's battery use is restricted.
+  if (!shot.batteryDeclined) shell(`dumpsys deviceidle whitelist -${PACKAGE}`, { allowFailure: true });
   writePrefs(theme, shot);
   startApp(DEV_LAUNCH);
   await waitForApp(shot.moving ? 12_000 : 60_000);
