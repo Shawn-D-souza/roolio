@@ -3,7 +3,7 @@ import { defineConfig, fontProviders } from "astro/config";
 
 export default defineConfig({
   // The production domain. Canonical links and social cards are built from it.
-  site: "https://roolio.app",
+  site: "https://roolio.netlify.app",
   vite: {
     // Use this project's tsconfig. Otherwise the build also reads the app's
     // tsconfig at the repo root, which extends Expo's and fails wherever only

@@ -40,7 +40,7 @@ Kotlin owns all data and enforcement, and React Native is the UI. Read this map 
 - `app.config.js`: with `APP_VARIANT=development` (`npm start`, `npm run android`, the `development` EAS profile), the app becomes Roolio Dev (`com.shawndza.roolio.dev`), so it installs next to the Google Play version. Without it, `app.json` is used unchanged.
 - `scripts/screenshots/`: `capture.mjs` screenshots Roolio Dev on the connected phone, changing the screen shape and theme through `adb`, and `seed.mjs` holds the sample data it uses. Images go to `screenshots/<device>/<theme>/<shot>.png`, listed in `screenshots/INDEX.md` (ignored by git). See Commands for when to run it.
 - `DESIGN.md`: the app icon spec.
-- `site/`: the public website (Astro, static), a separate npm project with its own `package.json` and README. It's left out of the app's TypeScript, ESLint and Metro. `src/pages/privacy.astro` is the privacy policy, `src/components/home/` holds the homepage sections, `src/components/mock/` holds HTML copies of app screens, and `src/config.ts` holds the developer name, the contact email and the Google Play link.
+- `site/`: the public website (Astro, static) at `https://roolio.netlify.app`, a separate npm project with its own `package.json` and README. The Settings screen links to its privacy policy. It's left out of the app's TypeScript, ESLint and Metro. `src/pages/privacy.astro` is the privacy policy, `src/components/home/` holds the homepage sections, `src/components/mock/` holds HTML copies of app screens, and `src/config.ts` holds the developer name, the contact email and the Google Play link.
 
 ### How it fits together
 
