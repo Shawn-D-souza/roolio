@@ -61,9 +61,15 @@ internal data class PeriodRow(
   val alertLeftMs: Long?,
   // Usage this period may reach before the next pause, as chosen on the pause screen.
   val continueUntilMs: Long?,
+  // Usage past the own budget and banked time that isn't borrowed, because
+  // a lowered budget or borrow cap forgave it.
+  val forgivenMs: Long,
 ) {
   val ownBudgetMs: Long
     get() = Ledger.ownBudgetMs(budgetMinutes, repaidMs)
+
+  /** The part of `usedMs` the ledger counts: forgiven time isn't spent from anything. */
+  fun ledgerUsedMs(usedMs: Long): Long = (usedMs - forgivenMs).coerceAtLeast(0L)
 }
 
 internal data class BorrowRow(
@@ -74,9 +80,11 @@ internal data class BorrowRow(
   val repaidMs: Long,
   val createdAt: Long,
   val clearedAt: Long?,
+  // No longer owed because a lowered budget or borrow cap forgave it.
+  val forgivenMs: Long,
 ) {
   val outstandingMs: Long
-    get() = amountMs - repaidMs
+    get() = (amountMs - repaidMs - forgivenMs).coerceAtLeast(0L)
 }
 
 private const val KEY_FIRST_DAY_OF_WEEK = "first_day_of_week"
@@ -296,13 +304,28 @@ internal class BudgetStore(private val database: RoolioDatabase) {
     )
   }
 
-  fun setPeriodBudget(id: Long, budgetMinutes: Int, bankedInMs: Long) {
+  fun setPeriodBudget(id: Long, budgetMinutes: Int) {
     db.update(
       "periods",
-      ContentValues(2).apply {
-        put("budget_minutes", budgetMinutes)
-        put("banked_in_ms", bankedInMs)
-      },
+      ContentValues(1).apply { put("budget_minutes", budgetMinutes) },
+      "id = ?",
+      arrayOf(id.toString()),
+    )
+  }
+
+  fun setPeriodBankedIn(id: Long, bankedInMs: Long) {
+    db.update(
+      "periods",
+      ContentValues(1).apply { put("banked_in_ms", bankedInMs) },
+      "id = ?",
+      arrayOf(id.toString()),
+    )
+  }
+
+  fun setPeriodForgiven(id: Long, forgivenMs: Long) {
+    db.update(
+      "periods",
+      ContentValues(1).apply { put("forgiven_ms", forgivenMs) },
       "id = ?",
       arrayOf(id.toString()),
     )
@@ -339,7 +362,7 @@ internal class BudgetStore(private val database: RoolioDatabase) {
       .rawQuery(
         """
         SELECT * FROM borrows
-        WHERE budget_id = ? AND cleared_at IS NULL AND repaid_ms < amount_ms
+        WHERE budget_id = ? AND cleared_at IS NULL AND repaid_ms + forgiven_ms < amount_ms
         ORDER BY id
         """,
         arrayOf(budgetId.toString()),
@@ -379,6 +402,15 @@ internal class BudgetStore(private val database: RoolioDatabase) {
     db.update(
       "borrows",
       ContentValues(1).apply { put("repaid_ms", repaidMs) },
+      "id = ?",
+      arrayOf(id.toString()),
+    )
+  }
+
+  fun setBorrowForgiven(id: Long, forgivenMs: Long) {
+    db.update(
+      "borrows",
+      ContentValues(1).apply { put("forgiven_ms", forgivenMs) },
       "id = ?",
       arrayOf(id.toString()),
     )
@@ -468,6 +500,7 @@ private fun Cursor.toPeriod() =
     alertStopMs = longOrNull("alert_stop_ms"),
     alertLeftMs = longOrNull("alert_left_ms"),
     continueUntilMs = longOrNull("continue_until_ms"),
+    forgivenMs = long("forgiven_ms"),
   )
 
 private fun Cursor.toBorrow() =
@@ -479,4 +512,5 @@ private fun Cursor.toBorrow() =
     repaidMs = long("repaid_ms"),
     createdAt = long("created_at"),
     clearedAt = longOrNull("cleared_at"),
+    forgivenMs = long("forgiven_ms"),
   )

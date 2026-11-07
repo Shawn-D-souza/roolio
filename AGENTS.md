@@ -69,9 +69,10 @@ Kotlin owns all data and enforcement, and React Native is the UI. Read this map 
 - Time is spent from the own budget first, then banked time, then borrowed time.
 - Periods start at local midnight: every day, on the chosen first day of the week (Monday by default), or on the 1st of the month.
 - At reset, leftover time is banked, up to budget × rollover ceiling.
-- Borrowing is counted by the minute as time is used. Borrowed time is paid back from the next periods' budgets, nearest first. Time owed can't go above budget × borrow cap, and once it does, the app is blocked until the next reset. Later edits never change minutes already owed.
+- Borrowing is counted by the minute as time is used. Borrowed time is paid back from the next periods' budgets, nearest first. Time owed can't go above budget × borrow cap, and once it reaches it, the app is blocked until the next reset.
 - Rollover ceiling and borrow cap are counted in periods (any whole number 0–7 for every user, 1 by default). 0 turns each off.
 - Edits apply immediately and never change past periods. Changing a budget's period while it owes time needs a `BorrowedChoice`: `clear` or `keep`.
+- Banked and owed time always stay within the limits the user set. After any edit (`keepWithinLimits` in `Budgets.kt`), banked time over budget × rollover ceiling is lost, and owed time over budget × borrow cap is forgiven, starting with this period's borrowing and then the newest borrows (`forgiven_ms` on periods and borrows). So the Home card always shows exactly one pip per period of the ceiling and the cap.
 - A notification comes 5 minutes and 1 minute before every pause, only while the app is on screen. A choice on the pause screen counts as warning for the time it gives, so "5 more minutes" gets only the 1-minute alert.
 - The pause screen only decides when to stop an app and never changes the numbers. Its choices, from top to bottom, are "Use [next period]'s time", "5 more minutes" and "Got it", which closes the app. "Got it" sits at the bottom, nearest the thumb.
 - Exempt apps are never counted, listed or paused: the dialer, system Settings, launchers and Roolio itself.

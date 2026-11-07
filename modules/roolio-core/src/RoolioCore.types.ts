@@ -78,8 +78,8 @@ export type CurrentPeriod = PeriodFields & {
   /** Time that can still be borrowed under the cap. */
   borrowLeftMs: number;
   /**
-   * The periods borrowed time comes out of, nearest first: one per borrow
-   * cap, or more while owed time reaches further.
+   * The periods borrowed time comes out of, nearest first: one per period
+   * of the borrow cap.
    */
   upcoming: UpcomingPeriod[];
 };

@@ -1,22 +1,13 @@
 import { StyleSheet, View } from "react-native";
 import { useAppTheme } from "../../theme/ThemeProvider";
 import { radius, space } from "../../theme/tokens";
-import { MAX_PERIOD_COUNT } from "../../budgets/rules";
 import type { BudgetWithUsage } from "../../budgets/types";
 import { BAR_HEIGHT, PeriodPips } from "./PeriodPips";
 
-// How many pips banked time gets: the rollover ceiling, or more if a lowered
-// budget left more banked than that many periods now hold, up to the most any
-// setting allows. Past that the pips just stay full until enough is used.
+// How many pips banked time gets: one per period of the rollover ceiling.
+// Banked time is kept within budget × ceiling, so they always hold all of it.
 export function bankSlots(budget: BudgetWithUsage) {
-  if (budget.budgetMinutes <= 0) return 0;
-  return Math.min(
-    Math.max(
-      budget.rolloverCeiling,
-      Math.ceil(budget.bankedInMinutes / budget.budgetMinutes),
-    ),
-    MAX_PERIOD_COUNT,
-  );
+  return budget.budgetMinutes > 0 ? budget.rolloverCeiling : 0;
 }
 
 // Time left in the current period, read like a battery. Left to right:

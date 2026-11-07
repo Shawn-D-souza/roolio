@@ -64,20 +64,23 @@ internal data class StopPlan(
  * The stops are: when available time reaches zero; then at the end of each
  * upcoming period's budget, nearest first, up to the borrow cap; and wherever
  * the user's last choice ends. Borrowing time owed from earlier periods sits
- * in the nearest periods, so a period it fully takes is skipped.
+ * in the nearest periods, so a period it fully takes is skipped. Forgiven time
+ * (see [PeriodRow.forgivenMs]) is usage that counts against nothing, so it
+ * moves every stopping point later by as much.
  */
 internal object Stops {
   fun plan(
     ownBudgetMs: Long,
     bankedInMs: Long,
+    forgivenMs: Long,
     budgetMs: Long,
     borrowCap: Int,
     owedMs: Long,
     continueUntilMs: Long?,
     usedMs: Long,
   ): StopPlan {
-    val availableEnd = ownBudgetMs + bankedInMs
-    val capEnd = capEndMs(ownBudgetMs, bankedInMs, budgetMs, borrowCap, owedMs)
+    val availableEnd = ownBudgetMs + bankedInMs + forgivenMs
+    val capEnd = capEndMs(ownBudgetMs, bankedInMs, forgivenMs, budgetMs, borrowCap, owedMs)
     // A choice keeps its place across edits, within what the budget allows now.
     val stopAt = (continueUntilMs ?: availableEnd).coerceIn(availableEnd, capEnd)
 
@@ -122,8 +125,14 @@ internal object Stops {
    * Usage at which nothing more can be borrowed: available time plus what the
    * borrow cap still allows after time owed from earlier periods.
    */
-  fun capEndMs(ownBudgetMs: Long, bankedInMs: Long, budgetMs: Long, borrowCap: Int, owedMs: Long): Long =
-    ownBudgetMs + bankedInMs + (budgetMs * borrowCap - owedMs).coerceAtLeast(0L)
+  fun capEndMs(
+    ownBudgetMs: Long,
+    bankedInMs: Long,
+    forgivenMs: Long,
+    budgetMs: Long,
+    borrowCap: Int,
+    owedMs: Long,
+  ): Long = ownBudgetMs + bankedInMs + forgivenMs + (budgetMs * borrowCap - owedMs).coerceAtLeast(0L)
 
   /**
    * When a blocked budget has its own time again: the upcoming period (0 =

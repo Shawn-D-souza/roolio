@@ -48,8 +48,8 @@ internal data class CurrentPeriod(
   val owedMs: Long,
   // Time that can still be borrowed under the cap.
   val borrowLeftMs: Long,
-  // The periods borrowed time comes out of, nearest first: one per borrow
-  // cap, or more while owed time reaches further.
+  // The periods borrowed time comes out of, nearest first: one per period
+  // of the borrow cap.
   val upcoming: List<UpcomingPeriod>,
 )
 
@@ -200,6 +200,7 @@ internal object Budgets {
         Stops.plan(
           ownBudgetMs = open.ownBudgetMs,
           bankedInMs = open.bankedInMs,
+          forgivenMs = open.forgivenMs,
           budgetMs = budgetMs,
           borrowCap = settings.borrowCap,
           owedMs = owed,
@@ -212,7 +213,8 @@ internal object Budgets {
       var resumeMs = 0L
       if (plan.paused) {
         // The ledger's view of what is taken: borrowing in whole minutes.
-        val borrowed = Ledger.borrowedMs(open.ownBudgetMs, open.bankedInMs, Ledger.countedMs(used))
+        val counted = open.ledgerUsedMs(Ledger.countedMs(used))
+        val borrowed = Ledger.borrowedMs(open.ownBudgetMs, open.bankedInMs, counted)
         val (index, left) = Stops.resume(owed + borrowed, budgetMs)
         resumeIndex = index
         resumeDay =
@@ -268,6 +270,7 @@ internal object Budgets {
         Stops.capEndMs(
           open.ownBudgetMs,
           open.bankedInMs,
+          open.forgivenMs,
           settings.budgetMinutes * MINUTE_MS,
           settings.borrowCap,
           owed,
@@ -300,8 +303,9 @@ internal object Budgets {
 
   /**
    * Saves edits to a budget. They apply immediately and never change past
-   * periods. A period change needs `choice` when there are outstanding
-   * borrows.
+   * periods, but banked and owed time are kept within the new limits (see
+   * [keepWithinLimits]). A period change needs `choice` when there are
+   * outstanding borrows.
    */
   fun update(
     budgetId: Long,
@@ -319,18 +323,10 @@ internal object Budgets {
       if (settings.period != budget.settings.period) {
         switchPeriod(budget, apps, open, settings, choice, now, fdow)
       } else {
-        val ownBudgetMs = Ledger.ownBudgetMs(settings.budgetMinutes, open.repaidMs)
-        var bankedInMs = open.bankedInMs
-        // A lowered ceiling trims banked time right away.
-        if (settings.rolloverCeiling < budget.settings.rolloverCeiling) {
-          val used = usedSince(budget, apps, open, now, fdow)
-          val bankedLeft = Ledger.bankedLeftMs(ownBudgetMs, open.bankedInMs, used)
-          val cap = Ledger.bankCapMs(settings.budgetMinutes, settings.rolloverCeiling)
-          bankedInMs -= (bankedLeft - cap).coerceAtLeast(0L)
-        }
-        store.setPeriodBudget(open.id, settings.budgetMinutes, bankedInMs)
+        store.setPeriodBudget(open.id, settings.budgetMinutes)
       }
       store.updateBudget(budgetId, settings, now)
+      keepWithinLimits(requireBudget(budgetId), apps, now, fdow)
     }
     syncTracker()
   }
@@ -379,12 +375,13 @@ internal object Budgets {
         }
     while (open.endDay <= today) {
       val used = usage(apps, open.startDay, open.endDay)
-      val left = Ledger.availableMs(open.ownBudgetMs, open.bankedInMs, used)
+      val counted = open.ledgerUsedMs(used)
+      val left = Ledger.availableMs(open.ownBudgetMs, open.bankedInMs, counted)
       val banked = Ledger.bankedAtResetMs(left, Ledger.bankCapMs(settings.budgetMinutes, settings.rolloverCeiling))
       val endsAt = Periods.dayStart(open.endDay)
       store.closePeriod(open.id, closedAt = endsAt, usedMs = used, bankedOutMs = banked)
       // Time used past the period's own time is owed by the periods after it.
-      val borrowed = Ledger.borrowedMs(open.ownBudgetMs, open.bankedInMs, used)
+      val borrowed = Ledger.borrowedMs(open.ownBudgetMs, open.bankedInMs, counted)
       if (borrowed > 0L) store.insertBorrow(budget.id, open.id, borrowed, endsAt)
       openPeriod(
         budget.id,
@@ -476,23 +473,55 @@ internal object Budgets {
       }
     }
     val used = usedSince(budget, apps, open, now, fdow)
-    val bankedLeft = Ledger.bankedLeftMs(open.ownBudgetMs, open.bankedInMs, used)
+    val bankedLeft = Ledger.bankedLeftMs(open.ownBudgetMs, open.bankedInMs, open.ledgerUsedMs(used))
     val carried = minOf(bankedLeft, Ledger.bankCapMs(settings.budgetMinutes, settings.rolloverCeiling))
     store.closePeriod(open.id, closedAt = now, usedMs = used, bankedOutMs = carried)
     openCurrentPeriod(budget.id, settings, carried, now, fdow)
   }
 
+  // Keeps banked and owed time within the budget's limits after an edit, so a
+  // lowered budget, rollover ceiling or borrow cap applies to time already
+  // banked or owed. Banked time over budget × ceiling is lost, as at a reset.
+  // Owed time over budget × borrow cap is forgiven, furthest from being paid
+  // back first: this period's borrowing, then the newest borrows.
+  private fun keepWithinLimits(budget: BudgetRow, apps: List<BudgetAppRow>, now: Long, fdow: Int) {
+    val settings = budget.settings
+    val open = store.openPeriod(budget.id)!!
+    val used = open.ledgerUsedMs(usedSince(budget, apps, open, now, fdow))
+
+    val bankedLeft = Ledger.bankedLeftMs(open.ownBudgetMs, open.bankedInMs, used)
+    val bankedOver = bankedLeft - Ledger.bankCapMs(settings.budgetMinutes, settings.rolloverCeiling)
+    val bankedInMs = open.bankedInMs - bankedOver.coerceAtLeast(0L)
+    if (bankedOver > 0L) store.setPeriodBankedIn(open.id, bankedInMs)
+
+    val borrows = store.outstandingBorrows(budget.id)
+    val borrowed = Ledger.borrowedMs(open.ownBudgetMs, bankedInMs, used)
+    val borrowCapMs = Ledger.borrowCapMs(settings.budgetMinutes, settings.borrowCap)
+    var over = borrows.sumOf { it.outstandingMs } + borrowed - borrowCapMs
+    if (over <= 0L) return
+    val fromPeriod = minOf(over, borrowed)
+    if (fromPeriod > 0L) store.setPeriodForgiven(open.id, open.forgivenMs + fromPeriod)
+    over -= fromPeriod
+    for (borrow in borrows.asReversed()) {
+      if (over <= 0L) break
+      val amount = minOf(over, borrow.outstandingMs)
+      store.setBorrowForgiven(borrow.id, borrow.forgivenMs + amount)
+      over -= amount
+    }
+  }
+
   private fun current(budget: BudgetRow, open: PeriodRow, used: Long, fdow: Int): CurrentPeriod {
     val settings = budget.settings
     val ownBudgetMs = open.ownBudgetMs
-    val borrowed = Ledger.borrowedMs(ownBudgetMs, open.bankedInMs, used)
+    val counted = open.ledgerUsedMs(used)
+    val borrowed = Ledger.borrowedMs(ownBudgetMs, open.bankedInMs, counted)
     val owed = store.outstandingBorrows(budget.id).sumOf { it.outstandingMs }
     // Owed time is paid back first, so it sits in the nearest periods.
     val taken = owed + borrowed
     val budgetMs = settings.budgetMinutes * MINUTE_MS
     var startDay = open.endDay
     val upcoming =
-      Ledger.upcomingTakenMs(taken, settings.budgetMinutes, settings.borrowCap, MAX_PERIOD_COUNT).map { takenMs ->
+      Ledger.upcomingTakenMs(taken, settings.budgetMinutes, settings.borrowCap).map { takenMs ->
         val period = UpcomingPeriod(startDay, budgetMs, takenMs)
         startDay = Periods.dayKey(Periods.nextPeriodStart(settings.period, Periods.dayStart(startDay), fdow))
         period
@@ -501,8 +530,8 @@ internal object Budgets {
       row = open,
       usedMs = used,
       ownBudgetMs = ownBudgetMs,
-      availableMs = Ledger.availableMs(ownBudgetMs, open.bankedInMs, used),
-      bankedMs = Ledger.bankedLeftMs(ownBudgetMs, open.bankedInMs, used),
+      availableMs = Ledger.availableMs(ownBudgetMs, open.bankedInMs, counted),
+      bankedMs = Ledger.bankedLeftMs(ownBudgetMs, open.bankedInMs, counted),
       borrowedMs = borrowed,
       owedMs = owed,
       borrowLeftMs = (Ledger.borrowCapMs(settings.budgetMinutes, settings.borrowCap) - taken).coerceAtLeast(0L),

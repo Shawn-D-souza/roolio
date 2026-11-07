@@ -16,10 +16,11 @@ private const val DATABASE_NAME = "roolio.db"
  *
  * Conventions: timestamps are epoch ms. Durations measured from usage are ms
  * (`_ms`); the budget the user sets is whole minutes (`budget_minutes`).
- * Ledger amounts (`repaid_ms`, `banked_*_ms`, `amount_ms`) are settled from
- * whole minutes of use, so they are always whole minutes too. Days
- * are device-local dates as "YYYY-MM-DD" (see Periods.dayKey), so they sort in
- * date order and keep one period per local date when the time zone changes.
+ * Ledger amounts (`repaid_ms`, `banked_*_ms`, `amount_ms`, `forgiven_ms`) are
+ * settled from whole minutes of use, so they are always whole minutes too.
+ * Days are device-local dates as "YYYY-MM-DD" (see Periods.dayKey), so they
+ * sort in date order and keep one period per local date when the time zone
+ * changes.
  */
 private val MIGRATIONS: List<List<String>> =
   listOf(
@@ -144,6 +145,14 @@ private val MIGRATIONS: List<List<String>> =
         visible    TEXT
       )
       """,
+    ),
+    listOf(
+      // Borrowed time no longer owed because the budget or borrow cap was
+      // lowered below it. For a period, it's time used past its own budget
+      // and banked time that isn't borrowed; for a borrow, it's no longer
+      // outstanding.
+      "ALTER TABLE periods ADD COLUMN forgiven_ms INTEGER NOT NULL DEFAULT 0 CHECK (forgiven_ms >= 0)",
+      "ALTER TABLE borrows ADD COLUMN forgiven_ms INTEGER NOT NULL DEFAULT 0 CHECK (forgiven_ms >= 0)",
     ),
   )
 

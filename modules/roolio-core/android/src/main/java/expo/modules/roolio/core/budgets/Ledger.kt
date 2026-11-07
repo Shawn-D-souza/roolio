@@ -47,16 +47,13 @@ internal object Ledger {
   fun bankedAtResetMs(availableMs: Long, capMs: Long): Long = minOf(availableMs, capMs)
 
   /**
-   * How much of each upcoming period's budget is already taken, nearest
-   * first, when `takenMs` is owed in total. Covers at least `count` periods,
-   * and more if needed to show everything owed, up to `maxCount`.
+   * How much of each of the `count` upcoming periods' budgets is already
+   * taken, nearest first, when `takenMs` is owed in total. Owed time is kept
+   * within the borrow cap, so `count` periods hold all of it.
    */
-  fun upcomingTakenMs(takenMs: Long, budgetMinutes: Int, count: Int, maxCount: Int): List<Long> {
+  fun upcomingTakenMs(takenMs: Long, budgetMinutes: Int, count: Int): List<Long> {
     val budgetMs = budgetMinutes * MINUTE_MS
-    val needed = if (takenMs <= 0L) 0 else ((takenMs + budgetMs - 1) / budgetMs).toInt()
-    return List(maxOf(count, needed).coerceAtMost(maxCount)) { index ->
-      (takenMs - index * budgetMs).coerceIn(0L, budgetMs)
-    }
+    return List(count) { index -> (takenMs - index * budgetMs).coerceIn(0L, budgetMs) }
   }
 
   /** Splits `amountMs` across outstanding debts, oldest first. Returns how much each repays. */
