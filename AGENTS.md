@@ -99,12 +99,14 @@ Use `bunx` instead of `npx` if the project uses bun (`bun.lock` present).
 ```bash
 npx expo install <package>  # ALWAYS use instead of npm/yarn/pnpm/bun add — resolves SDK-compatible versions
 npm start                   # start the dev server for Roolio Dev
-npm run check               # typecheck, then lint
+npm run check               # typecheck, lint, then expo-doctor
 npx expo-doctor             # diagnose dependency and config issues
 npx expo install --fix      # fix incompatible package versions
 ```
 
 The developer builds releases, so don't run production builds. When a task is completely done, run `npm run check` once, not after every edit, and fix what it finds. Then say what to build.
+
+`expo-doctor` only reads the project and changes nothing, like typecheck and lint. It compares package versions with the list Expo publishes for the SDK, so `npm run check` can fail after a new Expo release with no code changes, and a mismatch doesn't mean the app is broken. Don't fix version mismatches without asking, because `npx expo install --fix` changes dependencies and the lockfile. Tell the developer which packages are behind and what their changelogs say first.
 
 When the developer asks, you may build and install the development variant (`com.shawndza.roolio.dev`) and use `adb` to test and screenshot it on the developer's connected phone. Only change that variant: never touch the data or settings of `com.shawndza.roolio`. The screenshot script puts the phone back by itself. If you change the phone's settings by hand, put them back yourself.
 

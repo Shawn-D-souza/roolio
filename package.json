@@ -31,7 +31,7 @@
     "web": "expo start --web",
     "lint": "expo lint",
     "typecheck": "tsc --noEmit",
-    "check": "npm run typecheck && npm run lint",
+    "check": "npm run typecheck && npm run lint && npx expo-doctor",
     "screenshots": "node scripts/screenshots/capture.mjs"
   },
   "private": true,
