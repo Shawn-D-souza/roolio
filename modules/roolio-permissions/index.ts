@@ -58,21 +58,12 @@ export function requestNotificationPermissionAsync(): Promise<NotificationPermis
 /**
  * Opens the Settings screen that grants `permission` and shows `hint` there as
  * a short system message. Roolio returns to the front once it's granted, where
- * Android allows it; otherwise the user comes back with Back.
+ * Android allows it; otherwise the user comes back with Back. If it's already
+ * granted, Roolio doesn't come back by itself, because the user is only checking.
  */
 export function openPermissionSettings(
   permission: PermissionName,
   hint: string,
 ): void {
   RoolioPermissionsModule.openSettings(permission, hint);
-}
-
-/**
- * Opens the Settings screen where Roolio's battery use can be set to
- * Unrestricted, and shows `hint` there like `openPermissionSettings`. Unlike
- * it, Roolio doesn't come back by itself if battery use is already
- * unrestricted, because the user is only checking it.
- */
-export function openBatterySettings(hint: string): void {
-  RoolioPermissionsModule.openBatterySettings(hint);
 }

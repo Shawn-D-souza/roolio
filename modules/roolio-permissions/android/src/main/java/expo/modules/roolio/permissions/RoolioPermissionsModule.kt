@@ -140,21 +140,13 @@ class RoolioPermissionsModule : Module() {
     }
 
     // Opens the Settings screen for `permission`, shows `hint` there as a toast,
-    // and watches for the grant so Roolio can come back by itself.
+    // and watches for the grant so Roolio can come back by itself. When it's
+    // already on, the user is only checking it, so Roolio stays out of the way.
     Function("openSettings") { permission: String, hint: String ->
+      val alreadyGranted = isGranted(permission)
       openSettings(permission, settingsIntents(permission))
       showToast(hint)
-      mainHandler.post { startWatching(permission) }
-    }
-
-    // Opens the screen where Roolio's battery use can be set to Unrestricted.
-    // When it already is, the user is only checking it, so don't bring Roolio
-    // back on its own.
-    Function("openBatterySettings") { hint: String ->
-      val alreadyUnrestricted = isBatteryUnrestricted()
-      openSettings("batteryUnrestricted", settingsIntents("batteryUnrestricted"))
-      showToast(hint)
-      if (!alreadyUnrestricted) mainHandler.post { startWatching("batteryUnrestricted") }
+      if (!alreadyGranted) mainHandler.post { startWatching(permission) }
     }
 
     OnActivityEntersForeground {

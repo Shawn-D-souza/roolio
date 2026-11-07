@@ -5,6 +5,7 @@ import { useAppTheme } from "../../theme/ThemeProvider";
 import { space } from "../../theme/tokens";
 import { ThemeSelector } from "../../components/settings/ThemeSelector";
 import { BatterySetting } from "../../components/settings/BatterySetting";
+import { NotificationSetting } from "../../components/settings/NotificationSetting";
 
 export default function SettingsScreen() {
   const { colors } = useAppTheme();
@@ -24,6 +25,7 @@ export default function SettingsScreen() {
           </Text>
 
           <ThemeSelector />
+          <NotificationSetting />
           <BatterySetting />
         </View>
 

@@ -70,6 +70,8 @@ const BATTERY_CHOICES = BATTERY_ON_APP_PAGE
   ? ["Unrestricted", "Optimized", "Restricted"]
   : ["Don't optimize", "Optimize"];
 
+export const NOTIFICATIONS_SETTINGS_HINT = "Turn on notifications for Roolio";
+
 export const BATTERY_SETTINGS_HINT = BATTERY_ON_APP_PAGE
   ? "Tap Battery, then choose Unrestricted"
   : "Choose All apps, find Roolio, then choose Don't optimize";
@@ -262,7 +264,7 @@ export function getStepContent(
           ? "Allow notifications"
           : "Turn on in Settings",
         opensSettings: !canAskNotifications,
-        settingsHint: "Turn on notifications for Roolio",
+        settingsHint: NOTIFICATIONS_SETTINGS_HINT,
         stillOffHint: canAskNotifications
           ? "Notifications are off. You can turn them on any time."
           : "Notifications are still off. You can turn them on any time.",
