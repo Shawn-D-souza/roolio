@@ -116,6 +116,7 @@ npm run screenshots -- --shot settings    # one screen, or every screen starting
 npm run screenshots -- --restore          # put the phone back if a run was cut off
 ```
 
+- The `screenshots/` folder should always match the app. When all the work is finished, if it changed how any screen looks, remind the developer to retake those screenshots and name the screens. Don't retake them without being asked.
 - Choose by screen first: run only the screens the task changed, and keep all screen shapes unless told otherwise. A run of every screen takes a long time and keeps the phone busy, so only do that when the developer asks for one.
 - Viewing images is what uses up tokens. Look only at the images you need, starting with `tall-360x800` (a common shape), then `large-text` and `wide-672x840`. Check `tiny-320x569` and `small-360x640` for broken screens, but these phones are rare, so don't bend the design around them.
 - Check that the run ended with "The phone is back to normal". If it ended with "Couldn't confirm the phone is back to normal", run `--restore` and tell the developer.
