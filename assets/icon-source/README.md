@@ -11,7 +11,7 @@ this folder is bundled into the app.
 | `roolio-icon.svg` | `../icon.png` (1024×1024, opaque) | `expo.icon` — iOS + Play Store listing. No alpha, by App Store rule. |
 | `roolio-icon.svg` | `../favicon.png` (48×48) | `expo.web.favicon` |
 | `roolio-adaptive-foreground.svg` | `../android-icon-foreground.png` (1024×1024) | `expo.android.adaptiveIcon.foregroundImage`, over `backgroundColor: #2B2670` |
-| `roolio-adaptive-foreground.svg` | `../splash-icon.png` (1024×1024) | nothing yet — kept for a future `expo-splash-screen` config |
+| `roolio-splash.svg` | `../splash-icon.png` (1024×1024) | The `expo-splash-screen` plugin in `app.json`. The jar's inside is solid here, because see-through parts turned grey on a test phone's splash screen. Its colors are the adaptive foreground's over `#2B2670`. |
 | `roolio-adaptive-monochrome.svg` | `../android-icon-monochrome.png` (1024×1024) | `expo.android.adaptiveIcon.monochromeImage` — Android 13+ themed icons |
 | `roolio-notification.svg` | `../notification-icon.png` (96×96) | nothing yet — kept for a future `expo-notifications` config |
 | — | `play-store-512.png` | Play Console listing upload (not referenced by the app) |

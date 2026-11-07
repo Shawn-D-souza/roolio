@@ -57,6 +57,7 @@ Kotlin owns all data and enforcement, and React Native is the UI. Read this map 
 - A new budget field goes through `db/RoolioDatabase.kt`, `BudgetStore.kt`, `Budgets.kt`, `statusToMap` in `RoolioCoreModule.kt`, `RoolioCore.types.ts`, then `src/budgets/types.ts` and `repository.ts`.
 - Setting limits (budget 1 min to the period max, ceiling and cap 0–7) are checked in both `src/budgets/rules.ts` and `Budgets.kt`. Keep them in step.
 - The pause screen's colors in `res/values*/roolio_pause_colors.xml` copy `src/theme/tokens.ts`. Keep them in step.
+- The splash screen is set by the `expo-splash-screen` plugin in `app.json`, using `assets/splash-icon.png`. Its background colors copy `background` in `src/theme/tokens.ts`. Keep them in step, and check changes on a release build, because development builds don't show it fully.
 - The website's colors in `site/src/styles/tokens.css` also copy `src/theme/tokens.ts`, and its mock-ups in `site/src/components/mock/` copy the Home card and the pause screen. Keep them in step.
 - The Stats screen's `BankBorrowBalance` and statement colors follow the Home card: green for banked on the left, rust for borrowed on the right.
 - The welcome screen's picture in `src/components/welcome/StoryPicture.tsx` draws time like the Home card: grey for what's gone, from the right, banked time on the left and borrowed time on the right. Keep them in step.
