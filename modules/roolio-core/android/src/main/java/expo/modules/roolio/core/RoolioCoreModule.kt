@@ -15,6 +15,7 @@ import expo.modules.roolio.core.budgets.BudgetStatus
 import expo.modules.roolio.core.budgets.Budgets
 import expo.modules.roolio.core.budgets.NewApp
 import expo.modules.roolio.core.budgets.PeriodRow
+import expo.modules.roolio.core.plan.Premium
 import expo.modules.roolio.core.theme.AppTheme
 import expo.modules.roolio.core.theme.ThemeMode
 import expo.modules.roolio.core.tracking.TrackingService
@@ -181,6 +182,11 @@ class RoolioCoreModule : Module() {
     Function("rememberStatsRange") { kind: String -> remember(Remembered.STATS_RANGE, kind) }
 
     Function("rememberStatsChart") { view: String -> remember(Remembered.STATS_CHART, view) }
+
+    // Synchronous so the first render already shows what's locked.
+    Function("isPremium") { Premium.isActive(context) }
+
+    Function("setEarlyAccessPremium") { on: Boolean -> Premium.setEarlyAccess(context, on) }
   }
 
   private fun remember(item: Remembered, value: String) {

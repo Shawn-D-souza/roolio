@@ -42,6 +42,7 @@ const stats = (range, chart) => ({ prefs: { stats_range: range, stats_chart: cha
 // "none". `setup`, `welcomeSeen` and `batteryDeclined` are the app's saved
 // onboarding flags. Without `batteryDeclined`, the battery step would cover
 // every screen, because Roolio Dev's battery use isn't unrestricted by default.
+// `premium` is whether Premium is on, so nothing is locked.
 const SHOTS = [
   { name: "home-budgets", about: "Home with five budgets: banked, borrowed, weekly, monthly", link: "/", scroll: true },
   { name: "home-crowded", about: "Home with up to seven banked and seven borrow days", scenario: "crowded", link: "/", scroll: true },
@@ -57,6 +58,11 @@ const SHOTS = [
   { name: "stats-week-daily", about: "Stats: one week, bars in one color", ...stats("week", "daily"), scroll: true },
   { name: "stats-month-ring", about: "Stats: one month, ring chart", ...stats("month", "ring"), scroll: true },
   { name: "stats-week-calendar", about: "Stats: the range picker's calendar", ...stats("week", "ring"), tap: /, choose a / },
+  { name: "stats-locked", about: "Stats without Premium", link: "/stats", premium: false },
+  { name: "home-free", about: "Home without Premium: adding a fourth app is locked", link: "/", premium: false },
+  { name: "budget-free", about: "App detail without Premium: Week and Month locked (Reddit)", link: "/budget/com.reddit.frontpage", premium: false },
+  { name: "premium-offer", about: "Premium screen without Premium, from the Stats lock", link: "/premium?feature=stats", premium: false, scroll: true },
+  { name: "premium-on", about: "Premium screen with Premium on", link: "/premium", scroll: true },
   { name: "settings", about: "Settings", link: "/settings", scroll: true },
   { name: "welcome", about: "The one-time welcome screen (animated)", perms: "none", setup: false, welcomeSeen: false, moving: true },
   { name: "permissions-usage-access", about: "Setup: Usage Access step", perms: "none", setup: false },
@@ -66,7 +72,7 @@ const SHOTS = [
   { name: "permissions-turned-off", about: "A permission turned off after setup", perms: "none" },
   { name: "pause-out", about: "Pause screen: out of time, can borrow", scenario: "pause-out", pause: true },
   { name: "pause-blocked", about: "Pause screen: blocked, only Got it", scenario: "pause-blocked", pause: true },
-].map((shot) => ({ scenario: "everyday", perms: "all", setup: true, welcomeSeen: true, batteryDeclined: true, prefs: {}, ...shot }));
+].map((shot) => ({ scenario: "everyday", perms: "all", setup: true, welcomeSeen: true, batteryDeclined: true, premium: true, prefs: {}, ...shot }));
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -266,7 +272,7 @@ function writePrefs(theme, shot) {
   const coreEntries = { theme_mode: theme, ...shot.prefs };
   const core = Object.entries(coreEntries)
     .map(([key, value]) => `<string name="${key}">${value}</string>`)
-    .join("");
+    .join("") + `<boolean name="early_access_premium" value="${shot.premium}" />`;
   const permissions =
     `<boolean name="setup_completed" value="${shot.setup}" />` +
     `<boolean name="welcome_seen" value="${shot.welcomeSeen}" />` +
@@ -384,7 +390,7 @@ let appState = null;
 let seededScenario = null;
 
 async function prepare(shot, theme, device) {
-  const wanted = JSON.stringify([device.name, theme, shot.scenario, shot.perms, shot.setup, shot.welcomeSeen, shot.batteryDeclined, shot.prefs]);
+  const wanted = JSON.stringify([device.name, theme, shot.scenario, shot.perms, shot.setup, shot.welcomeSeen, shot.batteryDeclined, shot.premium, shot.prefs]);
   if (wanted === appState) return;
   shell(`am force-stop ${PACKAGE}`);
   // A new install has no database until Roolio Dev first opens.

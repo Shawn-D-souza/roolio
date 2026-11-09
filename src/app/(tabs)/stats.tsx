@@ -43,6 +43,8 @@ import { RangePicker } from "../../components/stats/RangePicker";
 import { NoData } from "../../components/stats/NoData";
 import { PrimaryButton } from "../../components/ui/PrimaryButton";
 import { TextButton } from "../../components/ui/TextButton";
+import { StatsLocked } from "../../components/stats/StatsLocked";
+import { usePremium } from "../../premium/PremiumProvider";
 
 // A swipe changes the range once it's pulled this share of the screen's
 // width, or flung faster than FLING (px per ms).
@@ -59,6 +61,11 @@ const SLIDE_IN_MS = 220;
 const SLIDE_IN_WAIT_MS = 500;
 
 export default function StatsScreen() {
+  const { isPremium } = usePremium();
+  return isPremium ? <Stats /> : <StatsLocked />;
+}
+
+function Stats() {
   const { colors } = useAppTheme();
   const { width } = useWindowDimensions();
   const reduceMotion = useReduceMotion();

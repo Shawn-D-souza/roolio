@@ -2,6 +2,8 @@ package expo.modules.roolio.core.budgets
 
 import android.content.Context
 import expo.modules.roolio.core.db.RoolioDatabase
+import expo.modules.roolio.core.plan.FREE_APP_LIMIT
+import expo.modules.roolio.core.plan.Premium
 import expo.modules.roolio.core.tracking.Notifications
 import expo.modules.roolio.core.tracking.PauseEnforcer
 import expo.modules.roolio.core.tracking.TrackerConfig
@@ -292,6 +294,10 @@ internal object Budgets {
         if (store.app(app.packageName) != null) {
           throw BudgetException("ERR_ALREADY_BUDGETED", "\"${app.packageName}\" already has a budget")
         }
+        if (!Premium.isActive(appContext)) {
+          if (!Premium.isFreePeriod(settings.period)) throw premiumRequired("A ${settings.period.key} budget")
+          if (store.apps().size >= FREE_APP_LIMIT) throw premiumRequired("More than $FREE_APP_LIMIT apps")
+        }
         val id = store.insertBudget(BudgetKind.APP, null, settings, now)
         store.insertApp(BudgetAppRow(app.packageName, id, app.appName, app.iconVersion, now))
         openCurrentPeriod(id, settings, bankedInMs = 0L, now, store.firstDayOfWeek())
@@ -317,6 +323,13 @@ internal object Budgets {
     UsageTracker.prepare()
     store.transaction {
       val budget = requireBudget(budgetId)
+      // A budget keeps the period it has without Premium, but can't switch to a longer one.
+      if (settings.period != budget.settings.period &&
+        !Premium.isFreePeriod(settings.period) &&
+        !Premium.isActive(appContext)
+      ) {
+        throw premiumRequired("A ${settings.period.key} budget")
+      }
       val fdow = store.firstDayOfWeek()
       val apps = store.apps(budgetId)
       val open = rollForward(budget, apps, now, fdow)
@@ -583,6 +596,9 @@ internal object Budgets {
 
   private fun requireBudget(id: Long): BudgetRow =
     store.budget(id) ?: throw BudgetException("ERR_BUDGET_NOT_FOUND", "No budget with id $id")
+
+  private fun premiumRequired(what: String) =
+    BudgetException("ERR_PREMIUM_REQUIRED", "$what needs Premium")
 
   private fun validate(settings: BudgetSettings) {
     val max = MAX_BUDGET_MINUTES.getValue(settings.period)

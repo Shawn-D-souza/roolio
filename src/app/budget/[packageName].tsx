@@ -30,12 +30,13 @@ import {
   periodLabel,
   periodNoun,
 } from "../../budgets/format";
-import type {
-  BorrowedChoice,
-  BudgetPeriod,
-  BudgetSettings,
-  BudgetWithUsage,
-  BudgetedApp,
+import {
+  BUDGET_PERIODS,
+  type BorrowedChoice,
+  type BudgetPeriod,
+  type BudgetSettings,
+  type BudgetWithUsage,
+  type BudgetedApp,
 } from "../../budgets/types";
 import { AppIcon } from "../../components/addApp/AppIcon";
 import { UsageSummary } from "../../components/budget/UsageSummary";
@@ -45,6 +46,12 @@ import { CountStepper } from "../../components/budget/CountStepper";
 import { PrimaryButton } from "../../components/ui/PrimaryButton";
 import { ConfirmDialog } from "../../components/ui/ConfirmDialog";
 import { TextButton } from "../../components/ui/TextButton";
+import { usePremium } from "../../premium/PremiumProvider";
+import {
+  isFreePeriod,
+  isPremiumRequired,
+  openPremium,
+} from "../../premium/plan";
 
 type Params = {
   packageName: string;
@@ -152,6 +159,7 @@ type BudgetFormProps = {
 
 function BudgetForm({ app, budget }: BudgetFormProps) {
   const { colors } = useAppTheme();
+  const { isPremium } = usePremium();
 
   const saved: BudgetSettings | null = budget && {
     period: budget.period,
@@ -180,6 +188,13 @@ function BudgetForm({ app, budget }: BudgetFormProps) {
   const canSave = !saving && (!saved || !settingsEqual(form, saved));
   const buttonEnabled = typingTime || canSave;
   const periodChanged = saved !== null && form.period !== saved.period;
+  // Without Premium, a budget can keep the period it has but not switch to
+  // a longer one.
+  const lockedPeriods = isPremium
+    ? []
+    : BUDGET_PERIODS.filter(
+        (period) => !isFreePeriod(period) && period !== saved?.period,
+      );
 
   const update = (changes: Partial<BudgetSettings>) =>
     setForm((current) => ({ ...current, ...changes }));
@@ -208,10 +223,15 @@ function BudgetForm({ app, budget }: BudgetFormProps) {
         await createBudget(app, form);
       }
       router.back();
-    } catch {
+    } catch (error) {
       savingRef.current = false;
       setSaving(false);
-      openDialog("save-error");
+      // Premium was turned off, or the free plan's apps filled up, elsewhere.
+      if (isPremiumRequired(error)) {
+        openPremium(isFreePeriod(form.period) ? "apps" : "periods");
+      } else {
+        openDialog("save-error");
+      }
     }
   };
 
@@ -315,7 +335,12 @@ function BudgetForm({ app, budget }: BudgetFormProps) {
           <Text style={[styles.sectionTitle, { color: colors.onSurface }]}>
             Period
           </Text>
-          <PeriodSelector value={form.period} onChange={changePeriod} />
+          <PeriodSelector
+            value={form.period}
+            onChange={changePeriod}
+            locked={lockedPeriods}
+            onLockedPress={() => openPremium("periods")}
+          />
         </View>
 
         <View style={styles.section}>

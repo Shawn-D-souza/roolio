@@ -5,12 +5,15 @@ import {
   usePermissions,
 } from "../permissions/PermissionsProvider";
 import { useUsageSync } from "../usage/useUsageSync";
+import { PremiumProvider } from "../premium/PremiumProvider";
 
 export default function RootLayout() {
   return (
     <ThemeProvider>
       <PermissionsProvider>
-        <RootStack />
+        <PremiumProvider>
+          <RootStack />
+        </PremiumProvider>
       </PermissionsProvider>
     </ThemeProvider>
   );
@@ -33,6 +36,10 @@ function RootStack() {
           <Stack.Screen
             name="budget/[packageName]"
             options={{ animation: "slide_from_right" }}
+          />
+          <Stack.Screen
+            name="premium"
+            options={{ animation: "slide_from_bottom" }}
           />
         </Stack.Protected>
         <Stack.Protected guard={needsSetup}>

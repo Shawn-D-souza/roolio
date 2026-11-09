@@ -23,8 +23,8 @@ export const MONDAY = 2;
  * time even if nothing ran at midnight.
  *
  * Errors carry a `code`: ERR_ALREADY_BUDGETED, ERR_BUDGET_NOT_FOUND,
- * ERR_INVALID_SETTINGS, ERR_BORROWED_CHOICE_REQUIRED, ERR_INVALID_THEME_MODE,
- * ERR_INVALID_SCREEN_CHOICE.
+ * ERR_INVALID_SETTINGS, ERR_BORROWED_CHOICE_REQUIRED, ERR_PREMIUM_REQUIRED,
+ * ERR_INVALID_THEME_MODE, ERR_INVALID_SCREEN_CHOICE.
  */
 
 /** Every budget with its current period. */
@@ -50,7 +50,11 @@ export function getStats(fromDay: string, toDay: string) {
   return RoolioCoreModule.getStatsAsync(fromDay, toDay);
 }
 
-/** Adds a budget for one app and returns its id. Time already spent this period counts. */
+/**
+ * Adds a budget for one app and returns its id. Time already spent this period
+ * counts. Without Premium, it rejects with ERR_PREMIUM_REQUIRED for a weekly or
+ * monthly budget, or once FREE_APP_LIMIT apps have one.
+ */
 export function createAppBudget(app: BudgetApp, settings: BudgetSettings) {
   return RoolioCoreModule.createAppBudgetAsync(app, settings);
 }
@@ -58,7 +62,8 @@ export function createAppBudget(app: BudgetApp, settings: BudgetSettings) {
 /**
  * Saves edits to a budget; they apply immediately. Changing the period of a
  * budget with borrowed time needs `borrowedChoice`, or it rejects with
- * ERR_BORROWED_CHOICE_REQUIRED.
+ * ERR_BORROWED_CHOICE_REQUIRED. Without Premium, switching to a weekly or
+ * monthly period rejects with ERR_PREMIUM_REQUIRED.
  */
 export function updateBudget(
   budgetId: number,
@@ -129,4 +134,21 @@ export function rememberStatsRange(kind: BudgetPeriod) {
 
 export function rememberStatsChart(view: StatsChartView) {
   RoolioCoreModule.rememberStatsChart(view);
+}
+
+/** How many apps can have a budget without Premium. */
+export const FREE_APP_LIMIT = 3;
+
+/**
+ * Whether the user has Premium. Without it, up to FREE_APP_LIMIT apps can
+ * have a budget, by the day only, and Stats is locked. Budgets made with
+ * Premium keep working without it.
+ */
+export function isPremium(): boolean {
+  return RoolioCoreModule.isPremium();
+}
+
+/** Turns Premium on or off. During early access it's free. Kept across restarts. */
+export function setEarlyAccessPremium(on: boolean) {
+  RoolioCoreModule.setEarlyAccessPremium(on);
 }

@@ -20,15 +20,25 @@ import {
   ADD_BUTTON_SIZE,
 } from "../../components/home/AddAppButton";
 import { BudgetCard } from "../../components/home/BudgetCard";
+import { usePremium } from "../../premium/PremiumProvider";
+import { FREE_APP_LIMIT, openPremium } from "../../premium/plan";
 
 const keyExtractor = (budget: BudgetWithUsage) => budget.packageName;
 
 export default function HomeScreen() {
   const { colors } = useAppTheme();
   const { budgets, status, reload } = useBudgets();
+  const { isPremium } = usePremium();
+  // Budgets made with Premium keep working; only adding another is locked.
+  const addLocked =
+    !isPremium && status === "ready" && budgets.length >= FREE_APP_LIMIT;
 
   const handleAddApp = () => {
-    router.push("/add-app");
+    if (addLocked) {
+      openPremium("apps");
+    } else {
+      router.push("/add-app");
+    }
   };
 
   const handleOpenBudget = useCallback((budget: BudgetWithUsage) => {
@@ -98,7 +108,7 @@ export default function HomeScreen() {
         />
       )}
 
-      <AddAppButton onPress={handleAddApp} />
+      <AddAppButton onPress={handleAddApp} locked={addLocked} />
     </SafeAreaView>
   );
 }

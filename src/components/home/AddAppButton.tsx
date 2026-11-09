@@ -1,15 +1,18 @@
-import { StyleSheet, Pressable } from "react-native";
+import { StyleSheet, Pressable, View } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useAppTheme } from "../../theme/ThemeProvider";
 import { radius } from "../../theme/tokens";
+import { LockBadge } from "../ui/LockBadge";
 
 export const ADD_BUTTON_SIZE = 64;
 
 type AddAppButtonProps = {
   onPress: () => void;
+  // Another app needs Premium: the button shows a lock and opens Premium.
+  locked?: boolean;
 };
 
-export function AddAppButton({ onPress }: AddAppButtonProps) {
+export function AddAppButton({ onPress, locked = false }: AddAppButtonProps) {
   const { colors } = useAppTheme();
 
   return (
@@ -20,9 +23,13 @@ export function AddAppButton({ onPress }: AddAppButtonProps) {
       ]}
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel="Add app"
+      accessibilityLabel={locked ? "Add app, needs Premium" : "Add app"}
     >
-      <MaterialIcons name="add" size={28} color={colors.onPrimary} />
+      {/* Wrapped so the lock sits on the icon's corner. */}
+      <View>
+        <MaterialIcons name="add" size={28} color={colors.onPrimary} />
+        {locked && <LockBadge ringColor={colors.primary} />}
+      </View>
     </Pressable>
   );
 }

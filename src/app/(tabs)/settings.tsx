@@ -7,6 +7,7 @@ import { space } from "../../theme/tokens";
 import { ThemeSelector } from "../../components/settings/ThemeSelector";
 import { BatterySetting } from "../../components/settings/BatterySetting";
 import { NotificationSetting } from "../../components/settings/NotificationSetting";
+import { PremiumSetting } from "../../components/settings/PremiumSetting";
 
 const PRIVACY_POLICY_URL = "https://roolio.netlify.app/privacy/";
 
@@ -33,6 +34,7 @@ export default function SettingsScreen() {
           </Text>
 
           <ThemeSelector />
+          <PremiumSetting />
           <NotificationSetting />
           <BatterySetting />
         </View>

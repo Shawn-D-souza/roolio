@@ -36,6 +36,8 @@ declare class RoolioCoreModule extends NativeModule<{}> {
   setThemeMode(mode: ThemeMode): void;
   isSystemDark(): boolean;
   getScreenMemory(): ScreenMemory;
+  isPremium(): boolean;
+  setEarlyAccessPremium(on: boolean): void;
   rememberTab(tab: RememberedTab): void;
   rememberStatsRange(kind: BudgetPeriod): void;
   rememberStatsChart(view: StatsChartView): void;

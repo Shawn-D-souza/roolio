@@ -4,9 +4,12 @@ import { Ionicons } from "@expo/vector-icons";
 import { useAppTheme } from "../../theme/ThemeProvider";
 import { radius } from "../../theme/tokens";
 import { rememberTab } from "../../../modules/roolio-core";
+import { usePremium } from "../../premium/PremiumProvider";
+import { LockBadge } from "../../components/ui/LockBadge";
 
 export default function TabLayout() {
   const { colors } = useAppTheme();
+  const { isPremium } = usePremium();
 
   return (
     <Tabs
@@ -54,9 +57,15 @@ export default function TabLayout() {
       />
       <Tabs.Screen
         name="stats"
-        listeners={{ focus: () => rememberTab("stats") }}
+        // A locked Stats isn't worth reopening on.
+        listeners={{
+          focus: () => {
+            if (isPremium) rememberTab("stats");
+          },
+        }}
         options={{
           title: "Stats",
+          tabBarAccessibilityLabel: isPremium ? "Stats" : "Stats, needs Premium",
           tabBarIcon: ({ focused }) => (
             <View
               style={[
@@ -64,13 +73,27 @@ export default function TabLayout() {
                 focused && { backgroundColor: colors.primaryContainer },
               ]}
             >
-              <Ionicons
-                name={focused ? "stats-chart" : "stats-chart-outline"}
-                size={22}
-                color={
-                  focused ? colors.onPrimaryContainer : colors.onSurfaceVariant
-                }
-              />
+              {/* Wrapped so the lock sits on the icon's corner. */}
+              <View>
+                <Ionicons
+                  name={focused ? "stats-chart" : "stats-chart-outline"}
+                  size={22}
+                  color={
+                    focused
+                      ? colors.onPrimaryContainer
+                      : colors.onSurfaceVariant
+                  }
+                />
+                {!isPremium && (
+                  <LockBadge
+                    ringColor={
+                      focused
+                        ? colors.primaryContainer
+                        : colors.surfaceContainer
+                    }
+                  />
+                )}
+              </View>
             </View>
           ),
         }}

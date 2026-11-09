@@ -28,6 +28,14 @@ export type AppColors = {
   scrim: string;
   // Apps in the Stats charts, most used first; the rest share `outline`.
   series: readonly [string, string, string];
+  // The Premium screen's hero: a deep indigo gradient from top to bottom,
+  // with its text and a gold badge on it.
+  premiumHeroTop: string;
+  premiumHeroBottom: string;
+  onPremiumHero: string;
+  onPremiumHeroVariant: string;
+  premiumGold: string;
+  onPremiumGold: string;
 };
 
 /**
@@ -83,7 +91,13 @@ export type AppColors = {
  *    vision 25.1 / 21.0 (floor 15), every color 3:1 or better. Re-run it on any
  *    change. Charts always name their apps too.
  *
- * 6. IF YOU CHANGE ANY VALUE
+ * 6. PREMIUM HERO
+ *    The hero is deep indigo in both themes, so its text is always light.
+ *    `onPremiumHero` (white) is 6.9:1 or better and `onPremiumHeroVariant`
+ *    5.0:1 or better anywhere on the gradient. `onPremiumGold` on
+ *    `premiumGold` is 8.2:1 light / 10.1:1 dark.
+ *
+ * 7. IF YOU CHANGE ANY VALUE
  *    Re-check contrast for every text/background pair it touches before
  *    shipping. Do not eyeball it; the palette passes AA today because the
  *    pairs were measured.
@@ -120,6 +134,12 @@ export const colors: Record<ColorScheme, AppColors> = {
     // since dimming an already-dark page barely shows.
     scrim: "rgba(0, 0, 0, 0.4)",
     series: ["#721DAF", "#338DDF", "#E63E84"],
+    premiumHeroTop: "#2E2696",
+    premiumHeroBottom: "#5148C2",
+    onPremiumHero: "#FFFFFF",
+    onPremiumHeroVariant: "#DCD8FF",
+    premiumGold: "#FFD66B",
+    onPremiumGold: "#2E2696",
   },
   dark: {
     background: "#121218",
@@ -148,6 +168,12 @@ export const colors: Record<ColorScheme, AppColors> = {
     onErrorContainer: "#FFDAD6",
     scrim: "rgba(0, 0, 0, 0.6)",
     series: ["#B167F7", "#2F72B1", "#D02572"],
+    premiumHeroTop: "#1C1858",
+    premiumHeroBottom: "#3A35A0",
+    onPremiumHero: "#FFFFFF",
+    onPremiumHeroVariant: "#DCD8FF",
+    premiumGold: "#F5C95C",
+    onPremiumGold: "#1C1858",
   },
 };
 
